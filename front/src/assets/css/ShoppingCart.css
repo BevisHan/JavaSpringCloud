@@ -1,0 +1,213 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+.breadcrumbCart{
+  width: 100%;
+
+  background: #f2f2f2;
+  padding: 15px 0;
+}
+.breadcrumbCart .el-breadcrumb__item{
+  color: #888888;
+}
+.breadcrumbCart .breadcrumbCartPosition{
+  position: relative;
+  width: 1200px;
+  margin: 0 auto;
+}
+.shoppingCart{
+  width: 1200px;
+  margin: 25px auto 30px;
+  overflow: hidden;
+}
+.shoppingCart .cartMain{
+  position: relative;
+  overflow: hidden;
+}
+.shoppingCart .cartThead{
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  padding: 7px 0px;
+  background: #f2f2f2;
+}
+.shoppingCart .cartThead div{
+  position: relative;
+  overflow: hidden;
+  /* font-size: 16px; */
+
+}
+.shoppingCart .cartThead .goods{
+  padding: 5px 251px 5px 115px;
+}
+/* .shoppingCart .cartThead .minimum, .number, .price,.sum{
+  padding: 5px 50px;
+} */
+.shoppingCart .cartThead .minimum{
+  width: 150px;
+  text-align: center;
+}
+.shoppingCart .cartThead .number{
+  width: 150px;
+  text-align: center;
+}
+.shoppingCart .cartThead .price{
+  width: 147px;
+  text-align: center;
+  padding-left: 5px;
+}
+.shoppingCart .cartThead .sum{
+  width: 110px;
+  text-align: center;
+  padding-left: 35px;
+
+}
+.shoppingCart .cartThead .action{
+  width: 175px;
+  text-align: center;
+  padding-left: 22px;
+}
+.shoppingCart .cartCut{
+  height: 2px;
+  background: #0063c6;
+  margin-bottom: 40px;
+}
+.shoppingCart .cartList{
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+}
+.shoppingCart .cartList .cartItem{
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  padding-bottom: 25px;
+  height: 106px;
+}
+.shoppingCart .cartList .itemImg img{
+  height: 100px;
+  width: 100px;
+  /* border: 1px solid; */
+}
+.shoppingCart .cartList .cartCheckbox{
+  padding: 44px 30px;
+}
+.shoppingCart .cartList .itemDetaIled{
+  padding: 40px 0px 40px 34px;
+
+}
+.shoppingCart .cartList .itemDetaIled p{
+  overflow: hidden; /*自动隐藏文字*/
+  text-overflow: ellipsis;/*文字隐藏后添加省略号*/
+  white-space: nowrap;/*强制不换行*/
+  width: 176px;
+}
+.shoppingCart .cartList .itemMinimum{
+  width: 150px;
+  text-align: center;
+  padding: 40px 0 0 15px;
+}
+.shoppingCart .cartList .itemNumber{
+  width: 150px;
+  text-align: center;
+  padding: 40px 0px 0 26px;
+}
+.shoppingCart .cartList .itemNumber .counter {
+  position: relative;
+  display: flex;
+  width: 120px;
+
+}
+.shoppingCart .cartList .itemNumber .counter .ad{
+  width: 33px;
+  height: 26px;
+  border: none;
+  outline: none;
+}
+.shoppingCart .cartList .itemNumber .counter .numInput{
+  width: 55px;
+  border: 1px solid #f2f2f2;
+  text-align: center;
+}
+.shoppingCart .cartList .itemPrice{
+  width: 150px;
+  text-align: center;
+  padding: 40px 0;
+  color: #7c7c7c;
+  padding: 40px 20px 0 0;
+}
+.shoppingCart .cartList .itemSum{
+  color: #db0014;
+  width: 150px;
+  text-align: center;
+  padding: 40px 0;
+  font-weight: bolder;
+}
+.shoppingCart .cartList .itemAction{
+  color: #db0014;
+  width: 200px;
+  text-align: center;
+  padding: 40px 0;
+}
+.shoppingCart .cartToolBar{
+  position: relative;
+  display: flex;
+  background: #f2f2f2;
+  height: 70px;
+  font-size: 14px;
+}
+.shoppingCart .cartToolBar .allCheckbox{
+  position: relative;
+  display: flex;
+  padding: 30px 0px 0px 34px;
+}
+.shoppingCart .cartToolBar .allCheckbox input{
+  margin-top: 5px;
+  margin-right: 10px;
+}
+.shoppingCart .cartToolBar .delete{
+  padding: 30px;
+}
+.shoppingCart .cartToolBar .count{
+  position: relative;
+  display: flex;
+  padding: 30px 0px 0px 300px;
+}
+.shoppingCart .cartToolBar .count p{
+  color: #db0014;
+  padding: 2px 5px;
+}
+.shoppingCart .cartToolBar .amount{
+  position: relative;
+  display: flex;
+  padding: 30px 0px 0px 20px;
+}
+.shoppingCart .cartToolBar .amount p{
+  color: #db0014;
+
+  font-weight: bolder;
+  font-size: 22px;
+  margin-top: -3px;
+}
+.shoppingCart .cartToolBar .action{
+  position: absolute;
+  right: 0px;
+  height: 100%;
+  display: flex;
+  margin-left: 40px;
+}
+.shoppingCart .cartToolBar .action div{
+  position: relative;
+  width: 50%;
+  color: #ffffff;
+  font-weight: bolder;
+  padding: 25px 30px 0px;
+  font-size: 18px;
+}
+.shoppingCart .cartToolBar .action .goShop{
+  background: #f68328;
+}
+.shoppingCart .cartToolBar .action .sure{
+  background: #db0014;
+}

@@ -1,0 +1,354 @@
+<template>
+<div>
+  <div class="menuTreeLeft" style="">
+    <div class="MenuTreeTitle">
+      <div class="left">部门树</div>
+      <div class="right pad-rig-10"> 
+        <i class="el-icon-plus pad-rig-10" @click="addTree('addMenuList')"></i>
+        <i class="el-icon-edit pad-rig-10" @click="editTree"></i>
+        <i class="el-icon-delete pad-rig-10" @click="delTree"></i>
+        <i class="el-icon-refresh pad-rig-10" @click="getData"></i>
+        
+      </div>
+    </div>
+    <el-tree
+     :data="menuData" 
+     :props="defaultProps" 
+     :default-expand-all='true' 
+     :highlight-current="true"   	
+      @node-click="handleNodeClick"
+      style="height: 520px;overflow:auto;border:1px solid #d1dbe5;">
+    </el-tree>
+  </div>
+  <div class="menuTreeRight">
+    <div class="menuTreeNews">
+      <span>部门信息</span>
+    </div>
+     <div class="mar-top-10">
+          <el-form ref="menuDetail" :inline="true"  :model="menuDetail" label-width="100px">
+            <el-form-item label="部门名称">
+              <el-input v-model="menuDetail.deptName" readonly></el-input>
+            </el-form-item>
+            <!-- <el-form-item label="部门代码">
+              <el-input v-model="menuDetail.deptCode" readonly></el-input>
+            </el-form-item> -->
+            <!-- <el-form-item label="职能范围代码">
+              <el-input v-model="menuDetail.authCode" readonly></el-input>
+            </el-form-item> -->
+            <el-form-item label="简称">
+              <el-input v-model="menuDetail.deptNameJ" readonly></el-input>
+            </el-form-item>
+             <el-form-item label="备注">
+              <el-input v-model="menuDetail.remark" readonly></el-input>
+            </el-form-item>
+          </el-form>
+      </div>
+  </div>
+    <!-- 新增部门 -->
+    <el-dialog title="新增部门" :visible.sync="dialogMenuAdd" width="30%" :close-on-click-modal="false">
+      <el-form :model="addMenuList" :rules="rulesAddMenu" ref="addMenuList" label-width="100px">
+        <el-form-item label="部门名称"   prop="deptName"   >
+          <el-input  v-model="addMenuList.deptName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+         <el-form-item label="简称"  prop="deptNameJ" class="mar-top-20">
+            <el-input v-model="addMenuList.deptNameJ"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+         <!-- <el-form-item label="职能范围代码"   prop="authCode"   class="mar-top-20">
+          <el-input  v-model="addMenuList.authCode" clearable class="inputWidth" ></el-input>
+        </el-form-item> -->
+         <el-form-item label="备注"  prop="remark" class="mar-top-20">
+            <el-input v-model="addMenuList.remark"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="addMenuSure('addMenuList')">确 定</el-button>
+      </div> 
+    </el-dialog>
+    <!-- 修改菜单 -->
+    <el-dialog title="修改部门" :visible.sync="dialogMenuEdit"  width="30%" :close-on-click-modal="false" :before-close="cancelDialog">
+        <el-form :model="editMenuList" :rules="rulesAddMenu" ref="editMenuList" label-width="100px">
+           <el-form-item label="部门名称"   prop="deptName"   >
+          <el-input  v-model="editMenuList.deptName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="简称"  prop="deptNameJ" class="mar-top-20">
+            <el-input v-model="editMenuList.deptNameJ"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+         <!-- <el-form-item label="职能范围代码"   prop="authCode"   class="mar-top-20">
+          <el-input  v-model="editMenuList.authCode" clearable class="inputWidth" ></el-input>
+        </el-form-item> -->
+         <el-form-item label="备注"  prop="remark" class="mar-top-20">
+            <el-input v-model="editMenuList.remark"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="editMenuSure('editMenuList')">确 定</el-button>
+        </div> 
+    </el-dialog>
+</div>
+</template>
+<script>
+  export default {
+    data() {
+      //表单验证非空去空格后
+     var validatePass = (rule, value, callback) => {
+      if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+        callback(new Error('请输入名称'));
+      }else {
+        callback();
+      }
+    };
+      return {
+        menuData:[],//菜单树
+        defaultProps: {////菜单树配置选项
+          children: 'children',//指定子树为节点对象的某个属性值
+          label: 'label'//指定节点标签为节点对象的某个属性值
+        },
+        menuDetail:{},//菜单详情
+        chooseMenuId:'',//选中的部门id
+        chooseDeptAuthCode:'',//选中的部门职能范围代码
+        dialogMenuAdd:false,//新增菜单树默认hide
+        dialogMenuEdit:false,//修改菜单树默认hide
+        addMenuList:{//新增菜单的数据
+          deptName:'',
+          // authCode:'',
+          deptNameJ:'',
+          remark:'',
+        },
+        editMenuList:{},//修改的菜单数据
+        rulesAddMenu:{//新增菜单
+         deptName: [
+             {required: true, validator: validatePass, trigger: 'blur' },
+             { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+          ],
+         deptNameJ: [
+              { required: true, validator: validatePass, trigger: 'blur' },
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+         },
+        getMenuUrl:this.$store.state.url+'/webauth/dept/listDepts',//查询菜单,
+        addNewMenuUrl:this.$store.state.url+'webauth/dept/insertDept',//新增菜单, 
+        getModifyMenuUrl:this.$store.state.url+'webauth/dept/updateDept',//修改菜单
+        deleteUrl:this.$store.state.url+'webauth/dept/deleteDept',//删除按钮,
+      };
+    },
+    mounted: function () {
+    this.$nextTick(function () {
+      this.getData();
+    })
+  },
+    methods: {
+      //选中一条菜单树
+      handleNodeClick(data) {
+        this.menuDetail=data.attributes;
+        this.chooseMenuId=data.id;//记住选中的菜单树id
+        this.chooseDeptAuthCode=this.menuDetail.authCode;//选中的部门职能范围代码
+      },
+      //打开新增菜单树dialog
+      addTree(addInfo){
+        this.dialogMenuAdd = true;
+        if(this.$refs[addInfo]){//清空表单
+          this.$refs[addInfo].resetFields();
+        }
+      },
+      //确认新增菜单
+      addMenuSure(formName){
+         this.$refs[formName].validate((valid) => {
+          if (valid) {
+              var params = new URLSearchParams();
+              params.append('deptName', this.addMenuList.deptName);
+              params.append('deptNameJ', this.addMenuList.deptNameJ);
+              params.append('parentDeptCode', this.chooseMenuId);
+              params.append('parentAuthCode', this.chooseDeptAuthCode);
+              params.append('remark', this.addMenuList.remark);
+              this.$axios.post(this.addNewMenuUrl,params).then(res =>  {
+                if(0==res.data.code){//新增成功
+                  this.getData();
+                  this.$message({
+                    showClose: true,
+                    message: '新增部门成功',
+                    type: 'success'
+                  });
+                  this.dialogMenuAdd = false;//隐藏dialog 
+                }else{
+                  this.$message({
+                    showClose: true,
+                    message: res.data.msg,
+                    type: 'error'
+                  });
+                }
+              }) 
+          } else {
+            return false;
+          }
+        });
+      },
+      //修改部门树
+      editTree(){
+        if(this.menuDetail.deptCode){
+          this.dialogMenuEdit = true;
+          this.editMenuList=JSON.parse(JSON.stringify(this.menuDetail));
+        }else{
+          this.$message({
+            showClose: true,
+            message: '请选择要修改的部门',
+            type: 'error'
+          });
+        }
+      },
+      //确认修改部门
+      editMenuSure(formName){
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('deptCode', this.editMenuList.deptCode);
+            params.append('deptName', this.editMenuList.deptName);
+            params.append('deptNameJ', this.editMenuList.deptNameJ);
+            // params.append('authCode', this.editMenuList.authCode);
+            params.append('remark', this.editMenuList.remark);
+            params.append('version', this.menuDetail.version);
+            this.$axios.post(this.getModifyMenuUrl,params).then(res =>  {
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.$message({
+                  showClose: true,
+                  message: '修改成功',
+                  type: 'success'
+                });
+                this.dialogMenuEdit = false;
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+          } else {
+            return false;
+          }
+        });
+      },
+      //删除部门树
+      delTree(){
+       if(this.menuDetail.deptCode){
+          this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          // params.append('deptCode', this.menuDetail.deptCode);
+          params.append('authCode', this.menuDetail.authCode);
+          this.$axios.post(this.deleteUrl,params).then(res =>  {
+          if(0==res.data.code){//删除成功
+            this.getData();
+            this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+           }
+        })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行删除",
+            type: 'error'
+          });
+        }
+      },
+       //取消新增,修改
+      cancelDialog(){
+        this.dialogMenuAdd = false;//隐藏dialo  
+        this.dialogMenuEdit = false;//隐藏dialo 
+        if(this.$refs['editMenuList']){//清空表单
+          this.$refs['editMenuList'].resetFields();
+        } 
+      },
+      //获取部门树
+      getData() {
+        this.$axios.post(this.getMenuUrl).then(res =>  {
+          this.chooseMenuId="";
+          this.menuDetail={};
+          if(0==res.data.code){//查询成功
+            this.menuData=res.data.data;
+          }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+          }
+        })
+     }
+    }
+  };
+</script>
+<style scoped>
+.left{
+  float: left;
+}
+.right{
+  float: right;
+}
+.pad-rig-10{
+  padding-right: 10px
+}
+.mar-top-20{
+  margin-top: 20px
+}
+.menuTreeLeft{
+  width:30%;
+  float:left
+}
+.menuTreeRight{
+  width:70%;
+  float:right
+}
+.MenuTreeTitle{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-bottom: none;
+  }
+.menuTreeNews{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-left: none;
+}
+.mar-top-10{
+  margin-top: 10px;
+}
+.el-form-item{
+  margin-bottom: 10px;
+}
+.buttonStyle{
+    /* color: #fff; */
+    /* background-color: #20a0ff; */
+    border: 1px solid #d1dbe5;
+    padding:8px 12px;
+    border-radius: 4px
+}
+.inputWidth{
+   max-width:200px
+}
+</style>
+

@@ -1,0 +1,1329 @@
+<template>
+    <!-- stripe属性可以创建带斑马纹的表格 
+        border属性可以创建竖直方向的边框 
+        height属性可实现固定表头的表格
+        fixed列冻结//参考apihttp://element-cn.eleme.io/#/zh-CN/component/table
+        配置highlight-current-row属性即可实现单选。之后由current-change事件来管理选中时触发的事件，它会传入currentRow，oldCurrentRow。
+        show-overflow-tooltip 超过部分。。。。
+    -->
+     <div>
+    <div>
+      <el-form :inline="true" :model="formInline" ref="formInline" class="demo-form-inline">
+        <el-form-item label="用户账号"  prop="userAcct"> <!--prop 重置时用到  -->
+          <el-input v-model="formInline.userAcct" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="用户名称" prop="userName">
+          <el-input v-model="formInline.userName" clearable></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchForm()">查询</el-button>
+        </el-form-item>
+         <el-form-item>
+          <el-button @click="resetForm('formInline')">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+     <div  class="handle-box">
+        <!-- <el-button type="primary" icon="el-icon-plus"    @click="addUser('addInfo')">用户新增</el-button>
+        <el-button type="primary" icon="el-icon-edit"    @click="editNews()">修改信息</el-button>
+        <el-button type="primary" icon="el-icon-edit"    @click="editPassword('editPwd')">修改密码</el-button>
+        <el-button type="primary" icon="el-icon-delete"  @click="delUser()">删除用户</el-button>
+        <el-button type="primary" icon="el-icon-check"   @click="assignRole()">指派角色</el-button>
+        <el-button type="primary" icon="el-icon-setting" @click="setPost()">设置岗位</el-button>
+        <el-button type="primary" icon="el-icon-setting" @click="setDepartment()">设置部门</el-button> -->
+        <el-button v-for="(x,k) in menuButtonList" :key="k" type="primary" :icon=x.buttonStyle   @click="chooseClick(x.buttonUrl)">{{x.buttonName}}</el-button>
+    </div>
+    <el-table 
+        :data="tableData" 
+        border
+        stripe 
+        @select="chooseOne"
+        @select-all="chooseAll" 
+        style="width: 100%" 
+       >
+       <!--  ref="multipleTable" -->
+        <el-table-column type="selection" width="55" ></el-table-column>
+        <el-table-column prop="userAcct" label="用户账号" fixed="left" sortable width="120">
+        </el-table-column>
+        <el-table-column prop="userName" label="用户名称" width="100">
+        </el-table-column>
+        <!-- <el-table-column prop="idcard" label="身份证号码" width="140">
+        </el-table-column> -->
+         <el-table-column prop="sex" label="性别" width="80">
+        </el-table-column>
+         <!-- <el-table-column prop="tel" label="固定电话" width="100">
+        </el-table-column> -->
+         <el-table-column prop="phone" label="手机号码" width="100">
+        </el-table-column>
+         <!-- <el-table-column prop="email" label="电子邮件">
+        </el-table-column> -->
+        <el-table-column prop="gmtCreate" label="创建时间" >
+        </el-table-column>
+        <el-table-column prop="gmtModified" label="修改时间" >
+        </el-table-column>
+        <!-- <el-table-column prop="deptName" label="所属部门" width="130">
+        </el-table-column> -->
+        <!-- <el-table-column prop="adminFlag" label="是否管理员" width="130">
+        </el-table-column> -->
+        <!-- <el-table-column prop="ip" label="IP地址" width="80">
+        </el-table-column> -->
+        <el-table-column prop="remark" label="备注" width="100">
+        </el-table-column>
+    </el-table>
+    <div class="pagination">
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="pageNum"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="dataSize">
+      </el-pagination>
+    </div>
+    <el-dialog title="新增用户" :visible.sync="dialogAdd" :close-on-click-modal="false">
+      <el-dialog 
+        width="30%"
+        title="选择部门"
+        :visible.sync="innerVisibleAdd"
+        :close-on-click-modal="false" 
+        append-to-body>
+       <div style="max-height:300px;overflow:auto">
+         <el-tree :data="data" 
+         :props="defaultProps" 
+         :highlight-current="true" 
+         @node-click="handleNodeClick"></el-tree>
+       </div>
+       <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelTreeDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addChooseSure(1)">确 定</el-button>
+        </div>
+      </el-dialog>
+      <el-form :model="addInfo" label-width="100px" :rules="rules" ref="addInfo" :inline="true" :label-position="'right'">
+        <!-- <el-form  label-width="100px" :inline="true" :label-position="'right'"> -->
+        <el-form-item label="用户账号"   prop="userAcct" >
+          <el-input v-model="addInfo.userAcct" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="用户名称"   prop="userName" >
+          <el-input v-model="addInfo.userName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <!-- <el-form-item label="用户密码"   prop="userPwd" >
+          <el-input v-model="addInfo.userPwd" clearable class="inputWidth" ></el-input>
+        </el-form-item> -->
+        <el-form-item label="身份证号码"  prop="idCard">
+            <el-input v-model="addInfo.idCard"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="固定电话"  prop="tel">
+            <el-input v-model="addInfo.tel"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号码"  prop="phone">
+            <el-input v-model="addInfo.phone"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="电子邮箱"  prop="email">
+            <el-input v-model="addInfo.email"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="所属部门"  prop="deptName">
+             <el-input v-model="deptName"   @focus="openTreeChooseAdd" readonly clearable  class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="性别"  prop="sex"  >
+          <el-select v-model="addInfo.sex" class="inputWidth"  >
+            <el-option label="男" value="1" style="padding-right:0px !important"></el-option>
+            <el-option label="女" value="0" style="padding-right:0px !important"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注"  prop="remark">
+            <el-input type="textarea" v-model="addInfo.remark" clearable  style="width:400px"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="addSure('addInfo')">确 定</el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="修改用户" :visible.sync="dialogEdit" :close-on-click-modal="false">
+      <el-dialog width="30%" title="选择部门" :visible.sync="innerVisibleEdit" :close-on-click-modal="false" append-to-body>
+       <div style="max-height:300px;overflow:auto">
+         <el-tree 
+          :data="data"
+          ref="tree1"
+          show-checkbox
+          :props="defaultProps"
+          :default-expand-all='true' 
+          :expand-on-click-node='false'
+          node-key="id"
+          :check-strictly='true'
+          :default-checked-keys=defautChoose
+          @node-click="handleNodeClick1"
+          @check-change="chooseOneDept1"
+          ></el-tree>
+          <!-- :props="defaultProps"
+          :highlight-current="true" 
+          @node-click="handleNodeClick" -->
+       </div>
+       <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelTreeDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addChooseSure(2)">确 定</el-button>
+        </div>
+      </el-dialog>
+       <el-form :model="editInfo" label-width="100px" :rules="rules" ref="editInfo" :inline="true" :label-position="'right'">
+        <!-- <el-form  label-width="100px" :inline="true" :label-position="'right'"> -->
+        <el-form-item label="用户账号"   prop="userAcct" >
+          <el-input v-model="editInfo.userAcct" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="用户名称"   prop="userName" >
+          <el-input v-model="editInfo.userName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <!-- <el-form-item label="用户密码"   prop="userPwd" >
+          <el-input v-model="editInfo.userPwd" clearable class="inputWidth" ></el-input>
+        </el-form-item> -->
+        <el-form-item label="身份证号码"  prop="idCard">
+            <el-input v-model="editInfo.idCard"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="固定电话"  prop="tel">
+            <el-input v-model="editInfo.tel"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号码"  prop="phone">
+            <el-input v-model="editInfo.phone"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="电子邮箱"  prop="email">
+            <el-input v-model="editInfo.email"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+        <el-form-item label="部门"  prop="deptName">
+             <el-input v-model="editInfo.deptName"   @focus="openTreeChooseEdit" clearable readonly   class="inputWidth"></el-input>
+          </el-form-item>      
+        <el-form-item label="性别"  prop="sex"  >
+          <el-select v-model="editInfo.sex" class="inputWidth"  >
+            <el-option label="男" value="1" style="padding-right:0px !important"></el-option>
+            <el-option label="女" value="0" style="padding-right:0px !important"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注"  prop="remark">
+            <el-input type="textarea" v-model="editInfo.remark" clearable  style="width:400px"></el-input>
+        </el-form-item>
+       </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="editSure('editInfo')">确 定</el-button>
+        </div>
+    </el-dialog>
+    <!-- 修改密码 -->
+    <el-dialog title="修改密码" :visible.sync="dialogPwdEdit" width="30%" :close-on-click-modal="false">
+      <el-form :model="editPwd" :rules="rules2" ref="editPwd" label-width="100px"  :label-position="'right'">
+        <el-form-item label="新密码"   prop="passWord" >
+          <el-input type="password" v-model="editPwd.passWord" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码"  prop="passWordCheck">
+            <el-input type="password" v-model="editPwd.passWordCheck"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="editPwdSure('editPwd')">确 定</el-button>
+      </div> 
+    </el-dialog>
+    <!-- 指派角色 -->
+    <el-dialog title="指派角色" :visible.sync="dialogRole" :close-on-click-modal="false" class="autoWidth">
+      <div style="height:35px;padding-left:60px">
+        <div  class="roleStyle rightNoStyle">指派角色</div>
+        <div  class="roleStyle">角色名称</div>
+        <!-- <div  class="roleStyle" >默认角色</div> -->
+      </div>
+      <div style="padding-left:60px">
+        <!-- min-height:100px; -->
+        <div style="width:251px;float:left">
+          <el-checkbox-group v-model="roleForm.type" @change="chooseCheck()"> 
+            <div v-for="item in roleFormData" class="tdStyle rightNoStyle topNoStyle">
+              <el-checkbox :label="item.roleCode"><span></span></el-checkbox>
+            </div>
+          </el-checkbox-group>
+        </div>
+        <div style="width:251px;float:left">
+          <div v-for="item in roleFormData" class="tdStyle topNoStyle">
+          <span >{{item.roleName}}</span>
+          </div>
+        </div>
+        <!-- <div style="width:181px;float:left;border-right:1px solid #d1dbe5">
+            <el-radio-group v-model="roleForm.resource"  @change="chooseRadio"> 
+            <div v-for="item in roleFormData" class="tdStyle topNoStyle">
+             <el-radio :label="item.roleCode" class="mar_top_12"><span></span></el-radio>
+            </div>
+          </el-radio-group> 
+        </div> -->
+        <div style="clear:both"></div>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="roleSure()">确 定</el-button>
+      </div> 
+    </el-dialog>
+    <!--设置部门 -->
+    <!--    show-checkbox	
+        @check-change="handleCheckChange"
+        node-key="id"
+        :default-checked-keys="checkedIds" 部门多选 -->
+    <el-dialog :title='"设置部门-"+titleUserName' :visible.sync="dialogDeptSet" width="30%" :close-on-click-modal="false">
+      <div style="max-height:300px;overflow:auto">
+        <el-tree 
+        :data="data"
+        ref="tree2"
+        show-checkbox
+        :props="defaultProps"
+        :default-expand-all='true' 
+        :expand-on-click-node='false'
+        node-key="id"
+        :check-strictly='true'
+        :default-checked-keys=defautChoose
+        @node-click="handleNodeClick2"
+        @check-change="chooseOneDept"
+        ></el-tree>
+        <!--     @node-click="handleNodeClick2"-->
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="setDeptSure()">确 定</el-button>
+      </div>
+    </el-dialog>
+    <!--设置岗位 -->
+    <el-dialog :title='"设置岗位-"+titleUserName' :visible.sync="dialogPostSet"  :close-on-click-modal="false">
+      <el-table 
+        ref="table"
+        :data="tablePostData" 
+        border
+        stripe 
+        @select="chooseOnePost"
+        @select-all="chooseAllPost" 
+        height="380" 
+        style="width: 100%" 
+       >
+        <el-table-column type="selection"    :reserve-selection="true" width="55" ></el-table-column>
+        <el-table-column prop="postName" label="岗位名称" fixed="left" sortable >
+        </el-table-column>
+        <el-table-column prop="postNameJ" label="岗位名称简">
+        </el-table-column>
+         <el-table-column prop="deptName" label="部门名称">
+        </el-table-column>
+    </el-table>
+    <div class="pagination">
+      <el-pagination
+        @size-change="handleSizeChangePost"
+        @current-change="handleCurrentChangePost"
+        :current-page="pageNumPost"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="pageSizePost"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="dataSizePost">
+      </el-pagination>
+    </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="setPostSure()">确 定</el-button>
+      </div>
+    </el-dialog>
+    
+   </div>
+  </template>
+
+<script>
+export default {
+  data() {
+    //表单验证飞控去空格后非空
+    var validatePass = (rule, value, callback) => {
+      if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+        callback(new Error('请输入用户名称'));
+      }else {
+        callback();
+      }
+    };
+    //修改
+    var validatePass2 = (rule, value, callback) => {
+      if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+        callback(new Error('请输入用户账号'));
+      }else {
+        callback();
+      }
+    };
+    //密码
+    var validatePassWord = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请输入密码'));
+        } else {
+          if (this.editPwd.passWordCheck !== '') {
+            this.$refs.editPwd.validateField('passWordCheck');
+          }
+          callback();
+        }
+      };
+    //密码确认
+    var validatePassWordCheck = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请再次输入密码'));
+      } else if (value !== this.editPwd.passWord) {
+        callback(new Error('两次输入密码不一致!'));
+      } else {
+        callback();
+      }
+    };
+    return{
+      loading:'',//加载遮罩
+      data: [],//部门菜单
+      defaultProps: {
+        children: 'children',
+        label: 'label'
+      },
+      dataSize: 0, //总条数
+      dataSizePost: 0, //总条数
+      tableData: [],
+      pageNum: 1,
+      pageSize: 10,
+      pageNumPost: 1,
+      pageSizePost: 10,
+      menuCode:'',//取store中的值
+      menuButtonList:[],//菜单按钮列表
+      formData:{},//查询条件传值
+      tablePostData:[],//岗位表
+      dialogAdd: false,//新增框默认隐藏
+      dialogEdit: false,//修改框默认隐藏
+      dialogPwdEdit:false,//修改密码框默认隐藏
+      dialogRole:false,//指派角色默认隐藏
+      innerVisibleAdd:false,//新增- 选择部门弹出
+      innerVisibleEdit:false,//修改- 选择岗位弹出
+      dialogDeptSet:false,//设置部门
+      dialogPostSet:false,//设置岗位
+      // checkedIds:[],//默认选中的部门id
+      defautChoose:[],//默认选中的部门id
+      titleUserName:'',//指派部门标题
+      roleForm:{//指派角色的check和radio
+          type: [],//checkbox
+          resource: '',//radio
+      },
+      roleFormData:[],
+      getDataUrl: this.$store.state.url+'webauth/user/listUsers',//查询
+      getUserByUserCodeUrl:this.$store.state.url+'webauth/user/getUserByUserCode',//修改获取用户信息
+      addUrl: this.$store.state.url+'webauth/user/saveUser',//新增
+      editUrl: this.$store.state.url+'webauth/user/updateUser',//修改
+      editPwdUrl: this.$store.state.url+'webauth/user/updatePwd',//修改密码
+      delUrl: this.$store.state.url+'webauth/user/deleteUser',//删除
+      roleFindUrl: this.$store.state.url+'webauth/user/listRolesAndChecked',//查询角色
+      roleSubmintUrl: this.$store.state.url+'webauth/user/saveUserRole',//指派角色 提交
+      getMenuUrl:this.$store.state.url+'/webauth/dept/listDepts',//查询部门树,
+      getPostByDeptUrl:this.$store.state.url+'/webauth/user/listPostsByUser',//查询岗位信息,
+      // getHasPost:this.$store.state.url+'/webauth/user/userAssignPost',//查询用户已有岗位
+      zpUserPost:this.$store.state.url+'/webauth/user/saveUserPosts',//设置岗位
+      zpUserdept:this.$store.state.url+'/webauth/user/saveUserDepts',//设置部门
+      hasUseDept:this.$store.state.url+'/webauth/dept/listUserDepts',//获取已授权的部门
+      
+      
+      formInline: {//快捷查询
+          userAcct: '',
+          userName: '',
+      },
+      addInfo:{
+          userAcct:'',//用户登陆账号
+          userName:'',
+          userPwd:'',
+          idCard:'',
+          sex:'1',//0女1男
+          tel:'',
+          phone:'',
+          email:'',
+          deptCode:'',//所属部门
+          adminFlag:'0',// 1代表是 0 代表否
+          // ip:'',
+          remark:''
+      },
+      deptName:'',//选中的部门名称
+      chooseDept:{},//选中的部门
+      selectId: [],//选中的id
+      selectPostId:[],//选中的psot id
+      editInfo:{},//待修改的参数
+      editInfoBefore:'',//修改前的值 取消修改用
+      i:0,
+      editPwd:{
+        passWord: '',
+        passWordCheck: '',
+      },//修改密码
+      rules: {//表单验证
+          userAcct: [
+              { required: true, validator: validatePass2,  trigger: 'blur' },// //,
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+          userName: [
+              { required: true, validator: validatePass, trigger: 'blur' },
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+          idCard: [//身份证验证
+             {pattern: /(^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$)|(^[1-9]\d{5}\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{2}$)/, message: '证件号码格式有误！', trigger: 'blur'}
+          ],
+          tel:[//固定电话
+             {pattern: /^((0\d{2,3})-)(\d{7,8})(-(\d{3,}))?$/, message: '请输入正确的固定电话' , trigger: 'blur'}
+          ],
+          phone:[//手机号码
+             {pattern: /^[1][3,4,5,7,8][0-9]{9}$/, message: '请输入正确的手机号码' , trigger: 'blur'}
+          ],
+          email:[//电子邮箱
+            { pattern: /^([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+@([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+\.[a-zA-Z]{2,3}$/,message: '请输入正确电子邮箱' , trigger: 'blur'}
+          ],
+          deptName:[
+          ],
+          ip:[//IP地址
+             {pattern: /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, message: '请输入正确的IP' , trigger: 'blur'}
+          ],
+        },
+      rules2:{//修改密码
+          passWord: [
+            { required: true, validator: validatePassWord, trigger: 'blur' }
+          ],
+          passWordCheck: [
+            { required: true, validator: validatePassWordCheck, trigger: 'blur' }
+          ],
+      }
+   };  
+  },
+  watch: {
+    pageNum: function (){
+      this.getData();
+      },
+    pageSize: function (){
+      this.getData();
+    },
+  },
+  mounted: function () {
+    this.$nextTick(function () {
+      this.getData();//获取页面表格
+      this.getButton();//获取页面按钮
+    })
+  },
+  // activated:function(){
+  //   if(this.$store.state.refreshFlag){
+  //     this.formInline = {
+  //       userAcct: '',
+  //       userName: '',
+  //     }
+  //   this.getData();//获取页面表格//
+  //   this.getButton();//获取页面按钮
+  //   }
+  // },
+  // deactivated:function(){
+  //   this.formInline = {
+  //     userAcct: '',
+  //     userName: '',
+  //   }
+  // },
+
+  methods: {
+    //打开加载
+    openFullScreen(){
+      this.loading = this.$loading({
+        lock: true,
+        text: '操作中...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      });
+    },
+    //获取页面按钮
+    getButton(){
+       this.menuCode=this.$store.state.menuCode;//防止按钮下面还有权限 切换菜单时值会改变
+       var params = new URLSearchParams();
+        params.append('USER_NAME', localStorage.getItem('ms_username'));
+        params.append('MENU_CODE', this.menuCode);
+        params.append('BUTTON_CODE', '');
+        this.$axios.post(this.$store.state.getButtonUrl, params).then(res =>  {
+        if(0==res.data.code){//设置成功
+          this.menuButtonList=res.data.data;
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+    },
+    //判断点击哪个按钮
+    chooseClick(method){
+        if('addUser'==method){
+          this.addUser('addInfo');
+        }else if('editPassword'==method){
+          this.editPassword('editPwd');
+        }else if('editNews'==method){
+          this.editNews();
+        }else if('delUser'==method){
+          this.delUser();
+        }else if('assignRole'==method){
+          this.assignRole();
+        }else if('setPost'==method){
+          this.setPost();
+        }else if('setDepartment'==method){
+          this.setDepartment();
+        }
+    },
+     //查询    
+    searchForm(){
+      var params = new URLSearchParams();
+    //   params.append("formData",JSON.stringify({ 
+    //     userAcct: this.formInline.userAcct,
+    //     userName: this.formInline.userName
+    //  }));
+     params.append('userAcct',this.formInline.userAcct);
+     params.append('userName',this.formInline.userName);
+     this.formData=params;
+      // this.pageNum=1;//每次查询从第一页开始
+      // this.getData();
+      if(1!=this.pageNum){
+        this.pageNum=1;//每次查询从第一页开始
+      }else{
+        this.getData();
+      }
+    },
+ 
+    //重置查询域
+    resetForm(formInline){
+       this.$refs[formInline].resetFields();
+    },
+    //用户新增   
+    addUser(addInfo){
+      this.dialogAdd = true;
+      if(this.$refs[addInfo]){//清空表单
+        this.$refs[addInfo].resetFields();
+       }
+    },
+     //新增-选择部门 树
+    openTreeChooseAdd(){
+      this.getDeptData(); 
+      this.innerVisibleAdd=true;
+     // this.chooseDept={};//清空已选部门树
+    },
+     //修改-选择部门树
+    openTreeChooseEdit(){
+       this.defautChoose=[];
+       this.defautChoose=[this.editInfoBefore.deptCode];//默认选中当前所属部门
+       this.chooseDept.id=this.editInfoBefore.deptCode;   
+       this.chooseDept.label=this.editInfoBefore.label;   
+       this.getDeptData(); 
+       this.innerVisibleEdit=true;
+    //   this.chooseDept={};//清空已选部门树
+    },
+    //选中一条 部门树
+    handleNodeClick(data) {
+      this.chooseDept=data;
+    },
+     //新增确认选择部门 树
+    addChooseSure(val){
+      if(this.chooseDept.id){
+        if(1==val){//1是新增 2是修改
+        this.deptName=this.chooseDept.label;
+        this.innerVisibleAdd=false;
+        }else{
+          if(0<this.$refs.tree1.getCheckedKeys().length){
+            this.editInfo.deptName=this.chooseDept.label;
+            this.innerVisibleEdit=false;
+            }else{
+              this.$message({
+              showClose: true,
+              message: '请选择一个部门',
+              type: 'error'
+            });
+            }
+          }
+      }else{
+        this.$message({
+          showClose: true,
+          message: '请选择一个部门',
+          type: 'error'
+        });
+      }
+    },
+    //获取部门树
+    getDeptData() {
+      this.chooseDept={};//清空已选部门树
+      this.$axios.post(this.getMenuUrl).then(res =>  {
+        if(0==res.data.code){//查询成功
+          this.data=res.data.data;
+        }else{
+        this.$message({
+          showClose: true,
+          message: res.data.msg,
+          type: 'error'
+        });
+        }
+      })
+    },
+    //新增修改——岗位——tree
+    cancelTreeDialog(){
+      this.innerVisibleAdd = false;//修改dialo  
+      this.innerVisibleEdit = false;//修改dialo  
+    },
+    //确认新增
+    addSure(formName){
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+              var params = new URLSearchParams();
+              params.append('userAcct', this.addInfo.userAcct);
+              params.append('userName', this.addInfo.userName);
+              params.append('idCard', this.addInfo.idCard);
+              params.append('sex', this.addInfo.sex);
+              params.append('tel', this.addInfo.tel);
+              params.append('phone', this.addInfo.phone);
+              params.append('email', this.addInfo.email);
+              params.append('adminFlag',this.addInfo.adminFlag);
+              params.append('userPwd',this.addInfo.userPwd);
+              params.append('deptCode', this.chooseDept.id);
+              //params.append('ip', this.addInfo.ip);
+              params.append('remark', this.addInfo.remark);
+              this.openFullScreen();//打开遮罩
+              this.$axios.post(this.addUrl,params).then(res =>  {
+                this.loading.close(); //关闭加载
+                if(0==res.data.code){//新增成功
+                  this.getData();
+                  this.$message({
+                    showClose: true,
+                    message: '新增用户成功',
+                    type: 'success'
+                  });
+                }else{
+                  this.$message({
+                    showClose: true,
+                    message: res.data.msg,
+                    type: 'error'
+                  });
+                }
+              })
+            this.dialogAdd = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+       
+    },
+    
+    //取消新增，修改，修改密码
+    cancelDialog(){
+      this.dialogAdd = false;//隐藏新增dialo  
+      this.dialogEdit = false;//修改dialo  
+      this.dialogPwdEdit = false;//隐藏修改密码dialo  
+      this.dialogRole = false;//隐指派角色dialo 
+      this.dialogDeptSet= false;//设置部门dialo 
+      this.dialogPostSet= false;//设置岗位dialo 
+      
+    },
+    //修改信息
+    editNews(form){
+      if(this.editInfoBefore){
+        if(undefined!=this.editInfoBefore.id){
+          this.dialogEdit = true;
+          this.editInfo=JSON.parse(JSON.stringify(this.editInfoBefore))
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行修改",
+          type: 'error'
+        });
+      }
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行修改",
+          type: 'error'
+        });
+      }
+    },
+    //确认修改
+    editSure(formName){
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('userCode', this.editInfo.userCode);
+            params.append('userAcct', this.editInfo.userAcct);
+            params.append('userName', this.editInfo.userName);
+            params.append('idCard', this.editInfo.idCard);
+            params.append('sex', this.editInfo.sex);
+            params.append('adminFlag', this.editInfo.adminFlag);
+            //params.append('tel', this.editInfo.tel);
+            params.append('phone', this.editInfo.phone);
+            params.append('email', this.editInfo.email);
+            // params.append('adminFlag', this.editInfo.adminFlag=='是'?1:0);
+            params.append('deptCode', this.chooseDept.id);
+            //params.append('ip', this.editInfo.ip);
+            params.append('remark', this.editInfo.remark);
+            params.append('version', this.editInfo.version);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.editUrl,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.$message({
+                    showClose: true,
+                    message: '修改用户成功',
+                    type: 'success'
+                  });
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+            this.dialogEdit = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+      
+    },
+    //修改密码   
+    editPassword(editPwd){
+      if(this.editInfoBefore){
+        if(this.$refs[editPwd]){//清空表单
+          this.$refs[editPwd].resetFields();
+        }
+        if(undefined!=this.editInfoBefore.id){
+            this.dialogPwdEdit = true;
+          }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一条数据进行修改",
+              type: 'error'
+            });
+        }
+      }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行修改",
+            type: 'error'
+          });
+       }
+    },
+    //确认修改密码
+    editPwdSure(formName){
+      this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('userCode', this.editInfoBefore.userCode);
+            params.append('newPwd', this.editPwd.passWord);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.editPwdUrl,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.$message({
+                    showClose: true,
+                    message: '修改密码成功',
+                    type: 'success'
+                });
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+            this.dialogPwdEdit = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+    },
+    //删除用户  
+    delUser(){
+      if(undefined!=this.selectId.length&&0<this.selectId.length){
+          this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          params.append('userList', this.selectId);
+          this.openFullScreen();//打开遮罩
+          this.$axios.post(this.delUrl,params).then(res =>  {
+            this.loading.close(); //关闭加载
+            if(0==res.data.code){//删除成功
+              //还剩的条数>当前页数减一乘每页条数且 当前页数不是第一页
+              if(Number(this.dataSize)-Number(this.delNum)>Number(Number(this.pageNum)-1)*Number(this.pageSize)&&Number(this.pageNum)>1){//如果页数*每页条数 大于之前总条数减去删除的条数 即还剩的条数 则继续请求 否者 当前页数减一
+                this.getData();
+              }else{
+                this.pageNum--;
+              }
+              this.editInfo={};
+              this.$message({
+                type: 'success',
+                message: '删除成功!'
+              });
+            }else{
+              this.$message({
+                showClose: true,
+                message: res.data.msg,
+                type: 'error'
+              });
+            }
+          })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行删除",
+          type: 'error'
+        });
+      }
+    },
+    //指派角色 查询
+    assignRole(){
+      if(this.editInfoBefore){
+      if(undefined!=this.editInfoBefore.id){
+          var params = new URLSearchParams();
+          params.append('userCode', this.editInfoBefore.userCode);
+          this.$axios.post(this.roleFindUrl, params).then(res =>  {
+             this.roleForm={//清空已选
+                type: [],//checkbox
+                resource: '',//radio
+             };
+            if(0==res.data.code){
+              this.roleFormData=res.data.data.all;
+              var hasChoose=res.data.data.checked;
+              for(var i=0;i<hasChoose.length;i++){
+                this.roleForm.type.push(hasChoose[i].roleCode)
+                if(1==hasChoose[i].defaultFlag){
+                this.roleForm.resource=hasChoose[i].roleCode
+                }
+              }
+            }else{
+               this.$message({
+               showClose: true,
+               message: res.data.msg,
+               type: 'error'
+             });
+            }
+           this.dialogRole = true;
+          })
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行指派",
+            type: 'error'
+          });
+      }
+      }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行指派",
+            type: 'error'
+          });
+      }
+    },
+    //指派角色 提交
+    roleSure(){
+        var role=[];
+        for(var i=0;i<this.roleForm.type.length;i++){
+            //  var list={
+            //     roleCode:'',
+            //     // defaultFlag:'',
+            //   };
+            if(this.roleForm.resource==this.roleForm.type[i]){
+              // list.roleCode=this.roleForm.resource;
+              // list.defaultFlag= 1;
+              role.push(this.roleForm.resource);
+            }else{
+              // list.roleCode=this.roleForm.type[i];
+              // list.defaultFlag= 0;
+              role.push(this.roleForm.type[i]);
+            }
+        }
+        var params = new URLSearchParams();
+        params.append('userCode', this.editInfoBefore.userCode);
+        params.append('roleList',role);
+        this.openFullScreen();//打开遮罩
+        this.$axios.post(this.roleSubmintUrl,params).then(res =>  {
+          this.loading.close(); //关闭加载
+          if(0==res.data.code){//
+            this.getData();
+            this.dialogRole = false;//隐指派角色dialo 
+            this.$message({
+              showClose: true,
+              message: '指派角色成功',
+              type: 'success'
+            });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+          }
+        })
+    },
+    //指派角色 radio变化监听
+    chooseRadio(){
+      if(-1==this.roleForm.type.indexOf(this.roleForm.resource)&&""!=this.roleForm.resource){//查找数据所在的下标，如果没找到，返回-1
+        this.roleForm.type.push(this.roleForm.resource)//即如果选中的radio前面的没选中 则选中
+      }
+    },
+    //指派角色 check变化监听
+    chooseCheck(){
+      if(-1==this.roleForm.type.indexOf(this.roleForm.resource)){//查找数据所在的下标，如果没找到，返回-1
+        this.roleForm.resource="";
+      }
+    },
+    //设置岗位   
+    setPost(){
+     if(this.editInfoBefore){
+        if(undefined!=this.editInfoBefore.id){
+          if(null!=this.editInfoBefore.deptCode){
+            // this.selectPostId=[];
+            this.getPostByDept();//根据部门查询岗位            
+            this.titleUserName=this.editInfoBefore.userName;
+            this.dialogPostSet = true;
+        }else{
+            this.$message({
+            showClose: true,
+            message: "请先设置部门",
+            type: 'error'
+        });
+        }
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行设置岗位",
+          type: 'error'
+        });
+      }
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行设置岗位",
+          type: 'error'
+        });
+      }
+    },
+    //确认设置岗位
+    setPostSure(){
+      var postInfoList = [];
+      for(var i = 0; i < this.tablePostData.length; i++){
+        postInfoList.push(this.tablePostData[i].postCode);
+      }
+      var params = new URLSearchParams();
+      params.append('userCode', this.editInfoBefore.userCode);
+      params.append('postList', this.selectPostId);
+      params.append('postInfoList', postInfoList);
+      this.openFullScreen();//打开遮罩
+      this.$axios.post(this.zpUserPost, params).then(res =>  {
+      this.loading.close(); //关闭加载
+      if(0==res.data.code){//设置成功
+        this.$message({
+          showClose: true,
+          message: '设置岗位成成功',
+          type: 'success'
+          });
+        this.dialogPostSet= false;//设置岗位dialo 
+        this.getData();
+        }else{
+          this.$message({
+          showClose: true,
+          message: res.data.msg,
+          type: 'error'
+          });
+          }
+        })
+    },
+    //查询选中用户已有岗位
+    // getUserHasPost() {
+    //   var params = new URLSearchParams();
+    //   params.append('USER_CODE', this.editInfoBefore.userCode);
+    //   this.$axios.post(this.getHasPost, params).then(res =>  {
+    //   if(0==res.data.code){//查询成功
+    //      var postCode=[];
+    //      for(var i=0;i<res.data.data.length;i++){
+    //        for(var j=0;j<this.tablePostData.length;j++){
+    //         if(res.data.data[i].postCode==this.tablePostData[j].postCode){
+    //          this.$refs.table.toggleRowSelection(this.tablePostData[j],true);//设置默认选中/默认选中已有岗位
+    //          postCode.push(this.tablePostData[j].postCode)
+    //         }
+    //        }
+    //      }
+    //      this.selectPostId = postCode.join(',');//将选中的id存起来
+    //     }
+    //   })
+    // },
+    //根据部门查询岗位
+    getPostByDept() {
+      var params = new URLSearchParams();
+      params.append('userCode', this.editInfoBefore.userCode);
+      this.$axios.post(this.getPostByDeptUrl+'?pageSize='+this.pageSizePost+'&pageNum='+this.pageNumPost, params).then(res =>  {
+      if(0==res.data.code){//查询成功
+        this.$refs.table.clearSelection();// type="selection" :reserve-selection="true" type=selection 的列有效，类型为 Boolean，为 true 则代表会保留之前数据的选项，需要配合 Table 的 clearSelection 方法使用。
+        this.tablePostData=res.data.data.data.list;
+        this.dataSizePost=res.data.data.data.total;
+        this.selectPostId=res.data.data.checked;//用户已授权的岗位
+        for(var i=0;i<this.selectPostId.length;i++){
+          for(var j=0;j<this.tablePostData.length;j++){
+            if(this.selectPostId[i]==this.tablePostData[j].postCode){
+              this.$refs.table.toggleRowSelection(this.tablePostData[j],true);//设置默认选中/默认选中已有岗位
+            }
+          }
+        }
+       }else{
+         this.$message({
+          showClose: true,
+          message: res.data.msg,
+          type: 'error'
+        });
+       }
+      })
+    },
+    //选中checkbox 岗位
+    chooseOnePost(val) {
+      var postCode=[];
+      for(var i=0;i<val.length;i++){
+        postCode.push(val[i].postCode)
+      }
+      this.selectPostId = postCode;//将选中的id存起来
+    },
+    //全选 岗位
+    chooseAllPost(val){
+      var postCode=[];
+      for(var i=0;i<val.length;i++){
+        postCode.push(val[i].postCode)
+      }
+      this.selectPostId = postCode.join(',');//将选中的id存起来
+    },
+    //获取已授权的部门
+    getHasUseDept(){
+      var params = new URLSearchParams();
+      params.append('userCode', this.editInfoBefore.userCode);
+      this.$axios.post(this.hasUseDept, params).then(res =>  {
+        if(0==res.data.code){//查询成功
+          this.defautChoose=res.data.data;
+        }
+      })
+    },
+    //设置部门  
+    setDepartment(){
+      this.defautChoose=[];
+       if(this.editInfoBefore){
+        if(undefined!=this.editInfoBefore.id){
+          this.getDeptData();//获取部门树
+          this.getHasUseDept();//获取已授权的部门
+
+          this.titleUserName=this.editInfoBefore.userName;
+         // this.defautChoose=[this.editInfoBefore.deptCode];//默认选中当前所属部门
+          this.chooseDept.id=this.editInfoBefore.deptCode
+          this.dialogDeptSet = true;
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行设置部门",
+          type: 'error'
+        });
+      }
+      }else{
+        this.$message({
+          showClose: true,
+          message: "请选择一条数据进行设置部门",
+          type: 'error'
+        });
+      }
+    },
+   
+    //确认设置部门
+    setDeptSure(){
+      if(0<this.$refs.tree2.getCheckedKeys().length){
+        var params = new URLSearchParams();
+        params.append('userCode', this.editInfoBefore.userCode);
+        params.append('deptList', this.chooseDept.id);
+        this.openFullScreen();//打开遮罩
+        this.$axios.post(this.zpUserdept, params).then(res =>  {
+        this.loading.close(); //关闭加载
+        if(0==res.data.code){//设置成功
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'success'
+            });
+            this.getData();
+            this.dialogDeptSet= false;//设置部门dilog关闭
+          }else{
+            this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+            });
+            }
+          })
+        }else{
+          this.$message({
+            showClose: true,
+            message:'请选择一个部门',
+            type: 'error'
+            });
+        }
+          
+      },
+    //选择部门-设置部门
+    handleNodeClick2(data){
+      this.$refs.tree2.setCheckedKeys([data.id]);
+      this.chooseDept=data;
+    },
+    //选择部门-设置部门-check
+    chooseOneDept(data,checked){
+      if(true==checked){
+        this.$refs.tree2.setCheckedKeys([]);
+        this.handleNodeClick2(data);
+        }
+      },
+    //选择部门-修改信息
+    handleNodeClick1(data){
+        this.$refs.tree1.setCheckedKeys([data.id]);
+        this.chooseDept=data;
+      },
+    //选择部门-修改信息-check
+    chooseOneDept1(data,checked){
+      if(true==checked){
+        this.$refs.tree1.setCheckedKeys([]);
+        this.handleNodeClick1(data);
+        }
+      },
+    //每页条数
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.getData();
+    },
+    //第几页
+    handleCurrentChange(val) {
+      this.pageNum = val;
+      this.getData();      
+    },
+    //每页条数
+    handleSizeChangePost(val) {
+      this.pageSizePost = val;
+      this.getPostByDept();
+    },
+    //第几页
+    handleCurrentChangePost(val) {
+      this.pageNumPost = val;
+      this.getPostByDept();
+    },
+    //选中checkbox，取消选中 此处返回的是以选中的val
+    chooseOne(val) {
+      var userCode=[];
+      for(var i=0;i<val.length;i++){
+        userCode.push(val[i].userCode)
+      }
+      this.delNum=userCode.length;
+      this.selectId = userCode;//将选中的id存起来
+      if(1==val.length){//选中一条时将选中的值存起来 否则清空待修改
+        this.editInfoBefore=JSON.parse(JSON.stringify(val[0]));
+        this.getUserByUserCode(JSON.parse(JSON.stringify(val[0])).userCode);
+      }else{
+        this.editInfo={};
+        this.editInfoBefore={};
+      }
+    },
+    //全选
+    chooseAll(val){
+      var userCode=[];
+      for(var i=0;i<val.length;i++){
+        userCode.push(val[i].userCode)
+      }
+      this.delNum=userCode.length;
+      this.selectId = userCode;//将选中的id存起来
+      this.editInfo={};
+      this.editInfoBefore={};
+    },
+    getData() {
+        this.openFullScreen();//打开遮罩
+        var params = new URLSearchParams();
+        params.append('userAcct', this.formInline.userAcct);
+        params.append('userName', this.formInline.userName);
+        this.$axios.post(this.getDataUrl+'?pageSize='+this.pageSize+'&pageNum='+this.pageNum,params).then(res =>  {
+        this.loading.close(); //关闭加载
+        this.editInfoBefore={};
+        this.selectId={};
+        if(0==res.data.code){//查询成功
+          this.tableData=res.data.data.list;
+          for(var i=0;i<this.tableData.length;i++){
+              if(0==this.tableData[i].sex){
+                  this.tableData[i].sex='女'
+              }else{
+                  this.tableData[i].sex='男'
+              }
+              if(0==this.tableData[i].adminFlag){
+                  this.tableData[i].adminFlag='否'
+              }else{
+                  this.tableData[i].adminFlag='是'
+              }
+          }
+          this.dataSize=res.data.data.total;
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+    },
+    getUserByUserCode(userCode){
+      var params = new URLSearchParams();
+      params.append('userCode',userCode);
+      this.$axios.post(this.getUserByUserCodeUrl, params).then(res =>  {
+        this.editInfoBefore={};
+        if(0==res.data.code){//查询成功
+          this.editInfoBefore=res.data.data;
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+    }
+  },
+};
+</script>
+
+<style scoped>
+.handle-box {
+  margin-bottom: 20px;
+}
+.inputWidth{
+   mav-width:200px
+}
+.mar_top_12{
+  margin-top:12px
+}
+.roleStyle{
+ width:250px;
+ height:35px;
+ line-height:35px;
+ float:left;
+ text-align:center;
+ border:1px solid #d1dbe5;
+}
+.topNoStyle{
+  border-top:none
+}
+.rightNoStyle{
+  border-right:none
+}
+.tdStyle{
+  width:250px;
+  height:40px;
+  line-height:40px;
+  text-align:center;
+  border:1px solid #d1dbe5;
+  border-top:none;
+  /* border-right:none */
+}
+
+</style>
+<style>
+ .autoWidth .el-dialog{
+  width:650px;
+}
+</style>

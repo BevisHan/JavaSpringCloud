@@ -1,0 +1,188 @@
+import Vue from 'vue';
+import Router from 'vue-router';
+
+Vue.use(Router);
+
+export default new Router({
+    routes: [
+        {
+            path: '/',
+            name:'登陆',
+            redirect: '/login',
+            meta: {
+                keepAlive: true // 需要被缓存
+              }
+        },
+        {
+            path: '/home',
+            name:'首页',
+            meta: {
+                keepAlive: true // 需要被缓存
+              },
+            component: resolve => require(['../components/common/Home.vue'], resolve),
+            children:[
+                {
+                    path: '/home',
+                    name:'首页',
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/home.vue'], resolve)
+                },{
+                    path: '/readme',
+                    name:'自述',
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/readme.vue'], resolve)
+                },
+                // {
+                //     path: '/basetable',
+                //     name:'基础表格',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/BaseTable.vue'], resolve)
+                // },
+                // {
+                //     path: '/vuetable',
+                //     name:'1',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/VueTable.vue'], resolve)     // vue-datasource组件
+                // },
+                // {
+                //     path: '/baseform',
+                //     name:'2',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/BaseForm.vue'], resolve)
+                // },
+                // {
+                //     path: '/vueeditor',
+                //     name:'3',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/VueEditor.vue'], resolve)    // Vue-Quill-Editor组件
+                // },
+                // {
+                //     path: '/markdown',
+                //     name:'4',
+                //     component: resolve => require(['../components/page/Markdown.vue'], resolve)     // Vue-Quill-Editor组件
+                // },
+                // {
+                //     path: '/upload',
+                //     name:'5',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/Upload.vue'], resolve)       // Vue-Core-Image-Upload组件
+                // },
+                // {
+                //     path: '/basecharts',
+                //     name:'6',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/BaseCharts.vue'], resolve)   // vue-schart组件
+                // },
+                // {
+                //     path: '/drag',
+                //     name:'7',
+                //     meta: {
+                //         keepAlive: true // 需要被缓存
+                //       },
+                //     component: resolve => require(['../components/page/DragList.vue'], resolve)    // 拖拽列表组件
+                // },
+                {
+                    path: '/user',
+                    name:'用户管理',
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/user.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/department',
+                    name:'部门管理',  
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },                  
+                    component: resolve => require(['../components/page/systemManage/department.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/post',
+                    name:'岗位管理', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/post.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/menu',
+                    name:'菜单管理', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/menu.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/role',
+                    name:'角色管理', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/role.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/timejob',
+                    name:'定时任务', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/systemManage/timejob.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/addTenant',
+                    name:'创建租户', 
+                    meta: {
+                        keepAlive: true // 不需要被缓存
+                      },
+                    component: resolve => require(['../components/page/tenantManage/addTenant.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/updateTenant',
+                    name:'修改租户', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/tenantManage/updateTenant.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/operationState',
+                    name:'租户管理', 
+                    meta: {
+                        keepAlive: false // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/tenantManage/operationState.vue'], resolve)    // 拖拽列表组件
+                },
+                {
+                    path: '/updateScript',
+                    name:'脚本更新', 
+                    meta: {
+                        keepAlive: true // 需要被缓存
+                      },
+                    component: resolve => require(['../components/page/tenantManage/updateScript.vue'], resolve)    // 拖拽列表组件
+                }
+            ]
+        },
+        {
+            path: '/login',
+            name:'登陆',
+            component: resolve => require(['../components/page/Login.vue'], resolve)
+        },
+    ]
+})

@@ -1,0 +1,966 @@
+<template>
+  <div>
+    <div>
+        <!-- <el-button type="primary" icon="el-icon-plus" @click="openAdd('form')">新增</el-button>
+        <el-button type="primary" icon="el-icon-edit" @click="openEdit()">修改</el-button>
+        <el-button type="primary" icon="el-icon-delete" @click="del()">删除</el-button> 
+        <el-button type="primary" icon="el-icon-warning" @click="menuAuthorize()">菜单授权</el-button>
+        <el-button type="primary" icon="el-icon-warning" @click="userAuthorize()">用户授权</el-button> -->
+        <el-button v-for="(x,k) in menuButtonList" :key="k" type="primary" :icon=x.buttonStyle   @click="chooseClick(x.buttonUrl)">{{x.buttonName}}</el-button>
+    </div>
+    <div style="margin-top:20px">
+        <el-table
+          :data="tableData"
+          border
+          stripe
+          @select="chooseOne"
+          @select-all="chooseAll"
+          height="450"
+          style="width: 100%">
+          <el-table-column
+            type="selection"
+            width="55">
+        </el-table-column>
+          <el-table-column
+            prop="roleName"
+            label="名称"
+          >
+          </el-table-column>
+          <el-table-column
+            prop="remark"
+            label="备注"
+            >
+          </el-table-column>
+        </el-table>
+        <div class="pagination">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="pageNum"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="dataSize">
+          </el-pagination>
+        </div>
+    </div>
+    <!-- 新增角色 -->
+      <el-dialog title="新增角色" :visible.sync="dialogAdd" width="30%" :close-on-click-modal="false">
+        <el-form :model="form" :rules="rules" ref="form" >
+          <el-form-item label="角色名称" :label-width="formLabelWidth"  prop="roleName" >
+            <el-input v-model="form.roleName" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="备注" :label-width="formLabelWidth" prop="remark">
+             <el-input v-model="form.remark"  clearable class="inputWidth"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addSure('form')">确 定</el-button>
+        </div>
+      </el-dialog>
+      <!-- 修改角色 -->
+      <el-dialog title="修改角色" :visible.sync="dialogEdit" width="30%" :close-on-click-modal="false">
+        <el-form :model="editList" :rules="rules" ref="editList" >
+          <el-form-item label="角色名称" :label-width="formLabelWidth"  prop="roleName">
+            <el-input v-model="editList.roleName" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="备注" :label-width="formLabelWidth" prop="remark">
+             <el-input v-model="editList.remark"  clearable class="inputWidth"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="editSure('editList')">确 定</el-button>
+        </div> 
+      </el-dialog>
+       <!-- 用户授权 -->
+      <el-dialog :title='"用户授权—"+titleUserAuthorize' :visible.sync="dialogUserAuthorize" width="50%" :close-on-click-modal="false">
+        <div>
+          <el-form :inline="true" :model="formInline" ref="formInline" class="demo-form-inline">
+            <el-form-item label="用户名称" prop="userName">
+              <el-input v-model="formInline.userName" clearable></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="searchForm()">查询</el-button>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="resetForm('formInline')">重置</el-button>
+            </el-form-item>
+          </el-form>
+          <el-table 
+              :data="tableData2" 
+              border
+              stripe 
+              @select="chooseOne2"
+              @select-all="chooseAll2" 
+              height="380" 
+              style="width: 100%" 
+              ref="multipleTable">
+              <el-table-column type="selection" width="55" ></el-table-column>
+              <el-table-column prop="userName" label="用户名称" >
+              </el-table-column>
+              <el-table-column prop="sex" label="性别">
+              </el-table-column>
+              <el-table-column prop="phone" label="手机号码">
+              </el-table-column>
+              <el-table-column prop="adminFlag" label="是否管理员" >
+              </el-table-column>
+          </el-table>
+          <div class="pagination">
+            <el-pagination
+              @size-change="handleSizeChange2"
+              @current-change="handleCurrentChange2"
+              :current-page="pageNum2"
+              :page-sizes="[10, 20, 50, 100]"
+              :page-size="pageSize2"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="dataSize2">
+            </el-pagination>
+          </div>
+        </div>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="userAuthorizeSure()">授权</el-button>
+        </div> 
+      </el-dialog>
+      <!-- 菜单授权 -->
+      <el-dialog :title='"菜单授权-"+titleMenuAuthorize' :visible.sync="dialogMenuAuthorize" width="50%" :close-on-click-modal="false">
+        <div class="menuTreeLeft">
+          <div class="MenuTreeTitle">
+            <div class="left">菜单</div>
+          </div>
+          <el-tree :data="menuData" ref="tree1" :default-expand-all='true' :highlight-current="true" show-checkbox	
+          @node-click="handleNodeClick" node-key="id" :default-checked-keys="checkedIds" :props="defaultProps" 
+          style="height: 430px;overflow:auto;border:1px solid #d1dbe5;">
+          </el-tree>
+        </div>
+        <div class="menuTreeRight">
+          <div class="menuTreeNews">
+            <span>菜单按钮</span>
+          </div>
+          <div class="">
+            <div>
+              <el-table ref="multipleBtnTable" :data="buttonTable" border stripe @select="chooseOneBotton"
+                @select-all="chooseOneBotton" height="430" style="width: 100%">
+                <!--  @selection-change="handleSelectionChange" -->
+                <el-table-column type="selection" width="55" ></el-table-column>
+                <el-table-column prop="buttonName" label="按钮名称" sortable >
+                </el-table-column>
+              </el-table>
+            </div>
+          </div>
+        </div>
+        <div style="clear:both"></div>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="menuAuthorizeSure()">确 定</el-button>
+        </div> 
+      </el-dialog>
+    </div>
+  </template>
+
+<script>
+export default {
+    data (){
+       //表单验证
+        var validatePass = (rule, value, callback) => {
+          if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+            callback(new Error('请输入角色名称'));
+          }else {
+            callback();
+          }
+        };
+        return{
+          loading:'',//加载遮罩
+          getDataUrl: this.$store.state.url+'webauth/role/ListRoles',//查询
+          addUrl: this.$store.state.url+'webauth/role/saveRole',//新增
+          editUrl: this.$store.state.url+'webauth/role/updateRole',//修改
+          delUrl: this.$store.state.url+'webauth/role/delRole',//删除
+          dataSize: 0, //总数
+          tableData: [],//表格数据
+          pageNum: 1,//第几页
+          pageSize: 10,//每页条数 默认10条
+          buttonList:[],//菜单按钮列表
+          menuButtonList:[],//页面按钮列表
+          /*用户授权数据起*/
+          getUserDataUrl: this.$store.state.url+'system/user/listUsers',//获取用户表格数据
+          getHasAssgin:this.$store.state.url+'webauth/role/getRoleAssginUserCurrentPage',//获取当前页用户 已有授权的用户
+          userChange: this.$store.state.url+'webauth/role/changeRoleUser',//用户授权确认
+          dataSize2: 0, //总数
+          tableData2: [],//表格数据
+          pageNum2: 1,//第几页
+          pageSize2: 10,//每页条数 默认10条
+          dialogUserAuthorize:false,//用户授权框
+          titleUserAuthorize:'',//用户授权dilog title
+          titleMenuAuthorize:'',//菜单授权dilog title
+          formInline: {//快捷查询
+              userName: '',
+              userAcct:''
+          },
+          formData:{
+            userName:'',
+            userAcct:'',
+          },//查询条件传值
+          editInfoBefore2:{},//修改前的值 取消修改用
+          selectId2: {},//选中的id
+          /*用户授权数据止*/
+          /*菜单授权数据起*/
+          getMenuUrl:this.$store.state.url+'webauth/menu/getAllMenu',//查询菜单,
+          getMenuBtnList:this.$store.state.url+'webauth/menuBtn/getMenuBtnList',//查询按钮详情,
+          // getHasMenuUrl:this.$store.state.url+'webauth/role/getRoleAssginMenu',//查该角色已有菜单
+          getHasBottonUrl:this.$store.state.url+'webauth/role/getRoleAssginMenuBtn',//查询已有按钮
+          roleChangeUrl:this.$store.state.url+'webauth/role/changeRoleMenuBtn',//角色授权确认
+
+          dialogMenuAuthorize:false,//菜单授权框
+          checkedIds:[],//默认选中的菜单id
+          buttonTable:[],//按钮表格数据
+          defalutChoosenBtn:[],//角色最初的所有选中按钮对象
+          checkedChoosenBtn:[],//每次点击按钮checkbox后所有的选中按钮对象
+          newChoosenBtn:[],//角色最终的所有选中按钮对象
+          hasChooseBotton:[],//当前选中菜单对应选中的按钮数组
+          changeMenuBtn:[],//记录所有点击的菜单树变化的btn对象
+          menuData:[],//菜单树
+          chooseMenuId:'',//选中的菜单id
+          defaultProps: {////菜单树配置选项
+          children: 'children',//指定子树为节点对象的某个属性值
+          label: 'label',//指定节点标签为节点对象的某个属性值
+          pageRoleCodes:'',//当前页用户code
+        },
+          /*菜单授权数据止*/
+          dialogAdd: false,//新增框
+          dialogEdit:false,//修改框
+          formLabelWidth: '80px',//input前面文字宽度
+          delNum:'0',
+          form: {
+            roleName: '',
+            remark: '',
+           },
+          editList:{},//待修改的参数
+          editInfoBefore:{},//修改前的值 取消修改用
+          selectId: {},//选中的id
+          rules: {//表单验证
+            roleName: [
+              { required: true,validator: validatePass, trigger: 'blur' }
+            ],
+            remark:[],//备注无需验证 写在此处是为了打开tialog时能统一清空表单
+          },
+          arrayList:[],//菜单授权
+          arrayMenu:{//菜单授权
+            menuId:'',
+            buttonId:'',
+          },
+          menuCodeFlag:'',//菜单授权 清空左侧按钮树标记
+       }
+    },
+    watch: {
+        pageNum: function (){
+          this.getData();
+          },
+        pageSize: function (){
+          this.getData();
+        },
+        pageNum2: function (){
+          this.getData2();
+          },
+        pageSize2: function (){
+          this.getData2();
+        },
+      },
+    mounted: function () {
+        this.$nextTick(function () {
+          this.getData();
+          this.getButton();//获取页面按钮
+    })
+    },
+    // activated:function(){
+    //   this.getButton();//获取页面按钮
+    // },
+    methods: {
+      //打开加载
+      openFullScreen(){
+        this.loading = this.$loading({
+          lock: true,
+          text: '操作中...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+      },
+       //获取页面按钮
+      getButton(){
+        console.log("获取角色按钮")
+        this.menuCode=this.$store.state.menuCode;//防止按钮下面还有权限 切换菜单时值会改变
+        var params = new URLSearchParams();
+          params.append('USER_NAME', localStorage.getItem('ms_username'));
+          params.append('MENU_CODE', this.menuCode);
+          params.append('BUTTON_CODE', '');
+          this.$axios.post(this.$store.state.getButtonUrl, params).then(res =>  {
+          if(0==res.data.code){//设置成功
+            this.menuButtonList=res.data.data;
+          }else if(-100 == res.data.code){
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            })
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+          }
+          })
+      },
+        //判断点击哪个按钮
+      chooseClick(method){
+          if('openAdd'==method){
+            this.openAdd('form');
+          }else if('openEdit'==method){
+            this.openEdit('editPwd');
+          }else if('del'==method){
+            this.del();
+          }else if('menuAuthorize'==method){
+            this.menuAuthorize();
+          }else if('userAuthorize'==method){
+            this.userAuthorize();
+          }
+      },
+      //查询-用户授权 
+      searchForm(){
+        var params = new URLSearchParams();
+        params.append("formData",JSON.stringify({ 
+          userName: this.formInline.userName
+       }));
+        this.formData=params;
+        if(1!=this.pageNum){
+          this.pageNum2=1;//每次查询从第一页开始
+        }else{
+          this.getData2();
+        }
+      },
+      //重置查询域-用户授权
+      resetForm(formInline){
+        this.$refs[formInline].resetFields();
+      },
+      //改变每页条数
+      handleSizeChange(val) {
+        this.pageSize = val;
+      },
+      //改变页数
+      handleCurrentChange(val) {
+        this.pageNum = val;
+      },
+      //改变每页条数-用户授权
+      handleSizeChange2(val) {
+        this.pageSize2 = val;
+      },
+      //改变页数-用户授权
+      handleCurrentChange2(val) {
+        this.pageNum2 = val;
+      },
+      //选中checkbox，取消选中 此处返回的是以选中的val
+      chooseOne(val) {
+        var roleCode=[];
+        for(var i=0;i<val.length;i++){
+          roleCode.push(val[i].roleCode)
+        }
+        this.delNum=roleCode.length;
+        this.selectId = roleCode.join(',');//将选中的id存起来
+        if(1==val.length){//选中一条时将选中的值存起来 否则清空待修改
+          this.editInfoBefore=JSON.parse(JSON.stringify(val[0]));
+          //this.editInfoBefore=val[0];
+        }else{
+         // this.editList={};
+          this.editInfoBefore={};
+        }
+      },
+      //全选
+      chooseAll(val){
+        var roleCode=[];
+        for(var i=0;i<val.length;i++){
+          roleCode.push(val[i].roleCode)
+        }
+        this.delNum=roleCode.length;
+        this.selectId = roleCode.join(',');//将选中的id存起来
+       // this.editList={};
+        this.editInfoBefore={};
+      },
+      //获取表格数据
+      getData() {
+        this.openFullScreen();//打开遮罩
+         this.$axios.post(this.getDataUrl+'?pageSize='+this.pageSize+'&pageNum='+this.pageNum).then(res =>  {
+           this.loading.close(); //关闭加载
+           this.selectId={};
+           this.editInfoBefore={};
+        if(0==res.data.code){//查询成功
+          this.tableData=res.data.data.list;
+          this.dataSize=res.data.data.totalRecords;
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+      },
+      //打开新增tialog
+      openAdd(form){
+        this.dialogAdd = true;
+        if(this.$refs[form]){//清空表单
+          this.$refs[form].resetFields();
+        }
+      },
+      //打开修改tialog
+      openEdit(){
+        if(this.editInfoBefore){
+          if(undefined!==this.editInfoBefore.uuid){
+            this.dialogEdit = true;
+            this.editList=JSON.parse(JSON.stringify(this.editInfoBefore));
+          }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一条数据进行修改",
+              type: 'error'
+            });
+          }
+        }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一条数据进行修改",
+              type: 'error'
+            });
+          }
+      },
+      //删除
+      del() {
+         if(undefined!=this.selectId.length&&0<this.selectId.length){
+          this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          params.append('roles', this.selectId);
+          this.openFullScreen();//打开遮罩
+          this.$axios.post(this.delUrl,params).then(res =>  {
+          this.loading.close(); //关闭加载
+          if(0==res.data.code){//删除成功
+            //还剩的条数>当前页数减一乘每页条数且 当前页数不是第一页
+            if(Number(this.dataSize)-Number(this.delNum)>Number(Number(this.pageNum)-1)*Number(this.pageSize)&&Number(this.pageNum)>1){//如果页数*每页条数 大于之前总条数减去删除的条数 即还剩的条数 则继续请求 否者 当前页数减一
+              this.getData();
+            }else{
+              this.pageNum--;
+            }
+            this.editList={};
+            this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+           }
+        })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行删除",
+            type: 'error'
+          });
+        }
+      },
+      //确认新增
+      addSure(formName){
+        // var params = new URLSearchParams();
+        // params.append("roleParams",JSON.stringify({ 
+        //   roleName: this.form.roleName,
+        //   remark: this.form.remark
+        //  }));
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('roleName', this.form.roleName);
+            params.append('remark', this.form.remark);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.addUrl,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//新增成功
+                this.getData();//用户查询
+                this.$message({
+                  showClose: true,
+                  message: '新增角色成功',
+                  type: 'success'
+                });
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+            this.dialogAdd = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+       
+      },
+      //确认修改
+      editSure(formName){
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('roleName', this.editList.roleName);
+            params.append('remark', this.editList.remark);
+            params.append('roleCode', this.editList.roleCode);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.editUrl,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.$message({
+                  showClose: true,
+                  message: '修改成功',
+                  type: 'success'
+                });
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+            this.dialogEdit = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+      },
+      //菜单授权
+      menuAuthorize(){
+        if(this.editInfoBefore){
+          if(undefined!==this.editInfoBefore.uuid){
+            this.buttonTable = [];
+            this.titleMenuAuthorize=this.editInfoBefore.roleName;//dilog title
+            this.getMenuData();//获取所有菜单
+            this.getHasBotton();//获取所有选中的按钮
+            this.dialogMenuAuthorize = true;
+          }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一个角色进行授权",
+              type: 'error'
+            });
+          }
+        }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一个角色进行授权",
+              type: 'error'
+            });
+        }
+      },
+      // //获取该角色已有菜单
+      // getHasMenu(){
+      //   var params = new URLSearchParams();
+      //   params.append('ROLE_CODE', this.editInfoBefore.roleCode);
+      //   this.$axios.post(this.getHasMenuUrl,params).then(res =>  {
+      //     if(0==res.data.code){
+      //       for(var i=0;i<res.data.data.length;i++){
+      //           this.checkedIds.push(res.data.data[i].menuCode)//该角色已有的菜单权限
+      //       }
+      //     }
+      //   })
+      // },
+      //获取该角色已有按钮
+      getHasBotton(){
+        this.defalutChoosenBtn = [];
+        var params = new URLSearchParams();
+        params.append('ROLE_CODE', this.editInfoBefore.roleCode);
+        this.$axios.post(this.getHasBottonUrl,params).then(res =>  {
+          if(0==res.data.code){
+            for(var i=0;i<res.data.data.checked.length;i++){
+                var obj = {
+                  menuCode:res.data.data.checked[i].menuCode,
+                  buttonCode:res.data.data.checked[i].buttonCode,
+                }
+                this.defalutChoosenBtn.push(obj);
+                //this.checkedChoosenBtn  = JSON.parse(JSON.stringify(this.defalutChoosenBtn));
+            };
+          }
+        })
+      },
+      //用户授权 dilog
+      userAuthorize(){
+        if(this.editInfoBefore){
+          if(undefined!==this.editInfoBefore.uuid){
+            this.titleUserAuthorize=this.editInfoBefore.roleName;//dilog title
+            this.getData2();//用户查询
+            this.dialogUserAuthorize = true;
+          }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一个角色进行授权",
+              type: 'error'
+            });
+          }
+        }else{
+            this.$message({
+              showClose: true,
+              message: "请选择一个角色进行授权",
+              type: 'error'
+            });
+        }
+      },
+      //获取当前页用户 已有授权的用户
+      getUseHasChoose(){
+        var userCodes=[];
+        this.pageRoleCodes='';
+        for(var i=0;i<this.tableData2.length;i++){
+            userCodes.push(this.tableData2[i].userCode)
+        }
+        this.pageRoleCodes=userCodes.join(',')
+        var params = new URLSearchParams();
+            params.append('ROLE_CODE', this.editInfoBefore.roleCode);
+            params.append('USER_CODES', this.pageRoleCodes);
+            this.$axios.post(this.getHasAssgin,params).then(res =>  {
+            if(0==res.data.code){
+              //当前页面的中已勾选的遍历出来
+                var userCode=[];
+                for(var i=0;i<res.data.data.length;i++){
+                  for(var j=0;j<this.tableData2.length;j++){
+                    if(res.data.data[i]==this.tableData2[j].userCode){
+                    this.$refs.multipleTable.toggleRowSelection(this.tableData2[j],true);//设置默认选中/默认选中已有用户
+                     userCode.push(this.tableData2[j].userCode)//防止刚进来不做操作
+                    }
+                  }
+              }
+             this.selectId2 = userCode.join(',');//将选中的id存起来
+            }
+            })
+      },
+      //选中checkbox，取消选中 此处返回的是以选中的val--用户授权
+      chooseOne2(val) {
+        var userCode=[];
+        for(var i=0;i<val.length;i++){
+          userCode.push(val[i].userCode)
+        }
+        this.selectId2 = userCode.join(',');//将选中的id存起来
+      },
+      //全选--用户授权
+      chooseAll2(val){
+        var userCode=[];
+        for(var i=0;i<val.length;i++){
+          userCode.push(val[i].userCode)
+        }
+        this.selectId2 = userCode.join(',');//将选中的id存起来
+       // this.editInfoBefore2={};
+      },
+      //用户查询
+      getData2() {
+        var params = new URLSearchParams();
+        params.append('userAcct', this.formInline.userAcct);
+        params.append('userName', this.formInline.userName);
+        this.$axios.post(this.getUserDataUrl+'?pageSize='+this.pageSize2+'&pageNum='+this.pageNum2, params).then(res =>  {
+        this.editInfoBefore2={};
+        this.selectId2={};
+        if(0==res.data.code){//查询成功
+          this.tableData2=res.data.data.list;
+          for(var i=0;i<this.tableData2.length;i++){
+              if(0==this.tableData2[i].sex){
+                  this.tableData2[i].sex='女'
+              }else{
+                  this.tableData2[i].sex='男'
+              }
+              if(0==this.tableData2[i].adminFlag){
+                  this.tableData2[i].adminFlag='否'
+              }else{
+                  this.tableData2[i].adminFlag='是'
+              }
+          }
+          this.dataSize2=res.data.data.totalRecords;
+          this.getUseHasChoose();
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+      },
+      //确认 用户授权
+      userAuthorizeSure(){
+        var params = new URLSearchParams();
+        params.append('role_code', this.editInfoBefore.roleCode);//角色code
+        params.append('currUserCodes', this.pageRoleCodes );//当前页用户
+        params.append('newUserCodes',  this.selectId2);//已经勾选用户
+        this.openFullScreen();//打开遮罩
+        this.$axios.post(this.userChange,params).then(res =>  {
+          this.loading.close(); //关闭加载
+          if(0==res.data.code){
+            this.$message({
+            showClose: true,
+            message: '用户授权成功',
+            type: 'success'
+          });
+          this.dialogUserAuthorize = false;
+          this.getData();
+          }
+        })
+      },
+      //确认 菜单授权
+      menuAuthorizeSure(){
+        let select=this.$refs.tree1.getCheckedKeys();//选中的菜单
+        let halfSelect=this.$refs.tree1.getHalfCheckedNodes()//半选中的菜单
+        for(var i=0;i<halfSelect.length;i++){
+          select.push(halfSelect[i].id)
+        }
+        let selectBut=[];//选中的按钮集合
+        this.newChoosenBtn = [];//最终选中的按钮对象
+        for(var k=0;k<this.defalutChoosenBtn.length;k++){
+          for(var j=0;j<select.length;j++){
+            if(this.defalutChoosenBtn[k].menuCode==select[j]){
+              var btnStr = this.defalutChoosenBtn[k].menuCode + ":"+ this.defalutChoosenBtn[k].buttonCode;
+              this.newChoosenBtn.push(btnStr);
+            }
+          }
+        }
+        var params = new URLSearchParams();
+        params.append('ROLE_CODE', this.editInfoBefore.roleCode);
+        params.append('MENU_CODES', select);
+        params.append('MENU_BTNS', this.newChoosenBtn);
+        this.openFullScreen();//打开遮罩
+        this.$axios.post(this.roleChangeUrl,params).then(res =>  {
+          this.loading.close(); //关闭加载
+          if(0==res.data.code){
+            this.$message({
+            showClose: true,
+            message: '菜单授权成功',
+            type: 'success'
+            });
+           this.dialogMenuAuthorize = false;//隐藏dialo  
+           this.getData();//刷新表格
+          }else{
+            this.$message({
+            showClose: true,
+            message:res.data.msg,
+            type: 'error'
+            });
+          }
+        })
+      },
+      //选中一条菜单树
+      handleNodeClick(data) {
+        this.chooseMenuId=data.id;//记住选中的菜单树id
+        for(var i=0;i<this.changeMenuBtn.length;i++){
+          if(data.id==this.changeMenuBtn[i].id){
+            this.buttonTable=this.changeMenuBtn[i].buttons;
+            this.$nextTick(function(){
+                this.setChoose(this.changeMenuBtn[i].select)
+            })
+            return;
+          }
+        }
+        this.findButtonList();//查询按钮信息
+      },
+      //勾住或取消勾住 菜单树
+      handleCheckChange(data, checked, indeterminate){
+      },
+      //选中,全选 按钮
+      chooseOneBotton(val) {
+          var userCode=[];//选中的按钮code的数组
+          var tableBtn = [];//选中的按钮对象
+          //this.checkedChoosenBtn = JSON.parse(JSON.stringify(this.defalutChoosenBtn)) || [];//清空 每次点击后所有选中的按钮对象
+          for(var m=0;m<val.length;m++){
+            var obj = {
+              menuCode:val[m].menuCode,
+              buttonCode:val[m].buttonCode,
+            } 
+            tableBtn.push(obj);
+            userCode.push(val[m].buttonCode);
+          }
+          //this.selectButtonId= userCode;//将选中的id存起来
+          //将选中的按钮id 按照menuid对应关系存起来
+          for(var k=0;k<this.changeMenuBtn.length;k++){
+            if(this.chooseMenuId==this.changeMenuBtn[k].id){
+              this.changeMenuBtn[k].select=userCode;
+            }
+          }
+          for(var i=0;i<this.defalutChoosenBtn.length;i++){
+            if(this.defalutChoosenBtn[i].menuCode == this.chooseMenuId){
+              this.defalutChoosenBtn.splice(i,1);
+              i--;
+            }
+          }
+          this.defalutChoosenBtn = this.defalutChoosenBtn.concat(tableBtn);
+      },
+      //数组去重复
+       unique(array){ 
+          var r = []; 
+          for(var i = 0, l = array.length; i < l; i++) { 
+          for(var j = i + 1; j < l; j++) 
+            if (array[i] === array[j]) j = ++i; 
+          r.push(array[i]); 
+          } 
+          return r; 
+          },
+      //判断值在数组中是否存在 contains(arr, 值)
+       contains(arr, obj) {
+          var i = arr.length;
+          while (i--) {
+            if (arr[i] === obj) {
+              return true;
+            }
+          }
+          return false;
+        },
+      //查询按钮信息
+      findButtonList(){
+        var params = new URLSearchParams();
+        params.append('MENU_CODE', this.chooseMenuId);
+        params.append('ROLE_CODE', this.editInfoBefore.roleCode);
+        this.$axios.post(this.getMenuBtnList,params).then(res =>  {//查询按钮详情
+            if(0==res.data.code){//查询成功
+              this.buttonTable = res.data.data.all;
+              this.hasChooseBotton = [];
+              for(var i=0;i<res.data.data.checked.length;i++){
+                this.hasChooseBotton.push(res.data.data.checked[i].buttonCode);
+              }
+              this.$nextTick(function(){
+                this.setChoose(this.hasChooseBotton)
+              })
+               //将查出来值存起来 下次点击菜单时不用再次请求
+              let list={
+                id:this.chooseMenuId,
+                buttons:this.buttonTable,
+                select:this.hasChooseBotton,
+              }
+              this.changeMenuBtn.push(list);
+            }else{
+              this.$message({
+                showClose: true,
+                message: res.data.msg,
+                type: 'error'
+              });
+            }
+        })
+      },
+      //  unique (arr) {
+      //     return this.checkedButtonIds.from(new Set(arr))
+      //   },
+       //获取菜单树
+      getMenuData() {
+        var params = new URLSearchParams();
+        params.append('roleCode', this.editInfoBefore.roleCode);
+        this.$axios.post(this.getMenuUrl,params).then(res =>  {
+          this.checkedIds=[];//已勾选菜
+          this.buttonList=[];//清空按钮树
+          this.changeMenuBtn = [];//清空点击菜单树记录了的菜单按钮
+          if(0==res.data.code){//查询成功
+            this.menuData=res.data.data.rootTree;
+            for(var i=0;i<res.data.data.menuCodeList.length;i++){
+              this.checkedIds.push(res.data.data.menuCodeList[i].menuCode)
+            }
+            //this.getHasMenu();//查询获取该角色已有菜单
+            //this.getHasBotton();//查询获取该角色下已有按钮
+          }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+          }
+        })
+      },
+      //取消新增,修改
+      cancelDialog(){
+        this.dialogAdd = false;//隐藏dialo  
+        this.dialogEdit = false;//隐藏dialo  
+        this.dialogUserAuthorize = false;//隐藏dialo  
+        this.dialogMenuAuthorize = false;//隐藏dialo  
+      },
+      //设置默认选中
+      setChoose(vlaue){
+        for(var i=0;i<vlaue.length;i++){
+          for(var j=0;j<this.buttonTable.length;j++){
+            if(vlaue[i]==this.buttonTable[j].buttonCode){
+                this.$refs.multipleBtnTable.toggleRowSelection(this.buttonTable[j],true);
+            }
+          }
+        }
+      },
+  }
+}
+</script>
+
+<style scoped>
+/* .inputWidth{
+  width: 80%
+} */
+.left{
+  float: left;
+}
+.right{
+  float: right;
+}
+.pad-rig-10{
+  padding-right: 10px
+}
+.mar-top-20{
+  margin-top: 20px
+}
+.menuTreeLeft{
+  width:30%;
+  float:left
+}
+.menuTreeRight{
+  width:70%;
+  float:right
+}
+.MenuTreeTitle{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-bottom: none;
+  }
+.menuTreeNews{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-left: none;
+}
+.mar-top-10{
+  margin-top: 10px;
+}
+.el-form-item{
+  margin-bottom: 20px;
+}
+.buttonStyle{
+    /* color: #fff; */
+    /* background-color: #20a0ff; */
+    border: 1px solid #d1dbe5;
+    padding:8px 12px;
+    border-radius: 4px
+}
+.inputWidth{
+   width:80%
+}
+</style>

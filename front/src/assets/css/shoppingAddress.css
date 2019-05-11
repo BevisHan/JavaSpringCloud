@@ -1,0 +1,97 @@
+.ShoppingAddress{
+    text-align:center;
+  }
+  .ShoppingAddress .cut{
+    width: 100%;
+    height: 45px;
+    line-height: 45px;
+    background: white;
+    text-align: left;
+  }
+  .ShoppingAddress .cut p{
+    margin-left: 24px;
+  }
+  .ShoppingAddress .concenter{
+    background-color: white;
+    margin-top: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+  }
+  .ShoppingAddress .oldaddress{
+    height: 40px;
+    line-height: 40px;
+    text-align: left;
+    background: rgb(242,242,242);
+  }
+  .ShoppingAddress .oldaddress p{
+    margin-left: 24px;
+  }
+  .ShoppingAddress .oldaddlist{
+    margin-top: 15px;
+    overflow: hidden;
+  }
+  .ShoppingAddress .oldaddlist-title{
+    height: 35px;
+    line-height: 35px;
+    display: flex;
+    justify-content: space-around;
+    background: rgb(242,242,242);
+    box-sizing: border-box;
+    border-bottom: 2px solid #006cd9;
+    
+  }
+  .ShoppingAddress .oldaddlist-title div{
+    font-size: 13px;
+    font-weight: bold;
+    color: rgb(124,124,124);
+  }
+
+  .ShoppingAddress .oldaddlist-content-item{
+    height: 65px;
+    line-height: 65px;
+    border: 1px solid #e9e4e4;
+    border-top: none;
+    display: flex;
+    justify-content: space-around;
+    
+  }
+  .ShoppingAddress .oldaddlist-content-item div{
+    font-size: 14px;
+  }
+  .ShoppingAddress .setDefault{
+    padding: 8px 22px;
+    border: 1.5px solid rgb(231,90,103);
+    border-radius: 16px;
+    color: rgb(231,90,103);
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .ShoppingAddress .IsDefault{
+    background: rgb(231,90,103);
+    padding: 8px 22px;
+    border: 1.5px solid rgb(231,90,103);
+    border-radius: 16px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .ShoppingAddress .setDefault:hover{
+    color:red;
+    border: 1.5px solid red;
+  }
+  .ShoppingAddress .addAddress{    
+    text-align: left;
+    width: 90%;
+    margin: 0 auto;
+    margin-top: 50px;
+  }
+  .ShoppingAddress .editbtn:hover{
+    color: rgb(231,90,103);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .ShoppingAddress .delbtn:hover{
+    color: rgb(231,90,103);
+    text-decoration: underline;
+    cursor: pointer;
+  }

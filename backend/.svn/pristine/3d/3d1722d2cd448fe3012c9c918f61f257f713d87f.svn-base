@@ -1,0 +1,213 @@
+<template>
+    <div class="wrapper">
+        <v-head @menus="findLeftMenu"  ref="vHead"></v-head>
+        <v-sidebar  @tools="changePages" @barName="setBar" ref="vSidebar"></v-sidebar>
+        <div class="content" :class="{longLength: isLongLength}">
+            <!-- <el-tabs v-model="editableTabsValue2" type="card" 
+            closable  @tab-click="tabClick" @tab-remove="removeTab">
+                <el-tab-pane
+                    v-for="item in editableTabs2"
+                    :key="item.name"
+                    :label="item.title"
+                    :name="item.name"
+                >
+                    {{item.content}}
+                </el-tab-pane>
+            </el-tabs>
+            <transition name="move" mode="out-in">
+                <router-view></router-view>
+            </transition> -->
+        <div class="app-wrap">
+            <!-- 此处放置el-tabs代码 -->
+            <div class="template-tabs">
+              <el-tabs
+                  v-model="activeIndex"
+                  type="border-card"
+                  closable
+                  @tab-click="tabClick"
+                  v-if="options.length"
+                  @tab-remove="tabRemove">
+                  <el-tab-pane
+                  v-for="(item, index) in options"
+                  :key="index"
+                  :label="item.name"
+                  :name="item.index"
+                  :code="item.code">
+                  </el-tab-pane>
+              </el-tabs>
+            </div>
+            <div style="padding: 20px;">
+             <transition name="move" mode="out-in">
+                  <!-- <router-view></router-view> -->
+                  <keep-alive>
+                      <router-view v-if="$route.meta.keepAlive">
+                      </router-view>
+                  </keep-alive>
+              </transition>
+              <transition name="move" mode="out-in">
+                  <router-view v-if="!$route.meta.keepAlive">
+                  </router-view>
+              </transition>
+            </div>
+        </div>
+        </div>
+    </div>
+</template>
+
+<script>
+ //监听浏览器返回按钮
+import vHead from "./Header.vue";
+import vSidebar from "./Sidebar.vue";
+export default {
+  data(){
+    return{
+      tools:0,//默认展开
+      isLongLength:false,//默认展开
+      subMenuName:[],//存放home头部导航
+    }
+  },
+  components: {
+    vHead,
+    vSidebar
+  },
+  methods: {
+    // tab切换时，动态的切换路由
+    tabClick(tab) {
+      let path = this.activeIndex;
+      //this.$store.state.menuCode = tab.code;
+      for(let menu of this.options) {
+        if(menu.index == tab.name){
+          this.$store.state.menuCode = menu.menuCode;
+        }
+      }
+      // 用户详情页的时候，对应了二级路由，需要拼接添加第二级路由
+    //   if (this.activeIndex === "/userInfo") {
+    //     path = this.activeIndex + "/" + this.$store.state.userInfo.name;
+    //   }
+      //this.queryMenuUrl = this.$store.state.url+'workOrderTrack/queryMenuIdBymenuName/'+tab.label;
+      // this.$axios.post(this.queryMenuUrl).then(res =>  {
+      //   if(1==res.data.code){//查询成功
+      //     this.$store.state.menuCode=res.data.data;;//给菜单code放到全局变量
+
+      //   }else if(0==res.data.code){
+      //     this.$message({
+      //       showClose: true,
+      //       message: res.data.msg,
+      //       type: 'error'
+      //     });
+      //     this.$store.commit("toLogin");
+      //   }else{
+      //     this.$message({
+      //       showClose: true,
+      //       message: res.data.msg,
+      //       type: 'error'
+      //     });
+      //   }
+      // })
+      this.$router.push({ path: path });
+    },
+    tabRemove(targetName) {
+      // 首页不可删除
+      if (targetName == "/home") {
+        return;
+      }
+      //this.router.meta.keepAlive = false;
+      this.$store.commit("delete_tabs", targetName);
+      //删除时 将删除的tab的缓存标记变为 不需要缓存
+      // for (let option of this.$router.options.routes[1].children) {
+      //   if (option.path === targetName) {
+      //      option.meta.keepAlive=false;
+      //   }}
+      if (this.activeIndex === targetName) {
+        // 设置当前激活的路由
+        if (this.options && this.options.length >= 1) {
+          this.$store.commit("set_active_index",this.options[this.options.length - 1].index);
+          this.$router.push({ path: this.activeIndex });
+          this.$store.state.menuCode = this.options[this.options.length - 1].menuCode;
+        } else {
+          this.$router.push({ path: "/home" });
+        }
+      }
+    },
+    //改变sidebar和home的宽度
+    changePages(type){
+      if(1==type){
+        this.isLongLength=true;
+      }else{
+        this.isLongLength=false;
+      }
+    }, 
+    setBar(){
+      this.subMenuName=this.$store.state.subMenuName//存放home头部导航
+    },
+    //此处接受header.vue传来的值(一级菜单id）区分是header还是首页传来的 flag=“”是首页
+    findLeftMenu(type,flag){
+       this.$refs.vSidebar.findLeftMenu(type,flag);//父菜单调用子菜单的方法
+    },
+  },
+  computed: {
+    options() {
+      return this.$store.state.options;
+    },
+    activeIndex: {
+      get() {
+        return this.$store.state.activeIndex;
+      },
+      set(val) {
+        this.$store.commit("set_active_index", val);
+      }
+    }
+  },
+  watch: {
+    $route(to) {
+      var cwgFlag=0;
+      window.addEventListener("popstate", function() {
+      var cwgFlag=1;
+      })
+      let flag = false;
+      for (let option of this.options) {
+        if (option.name === to.name) {
+          flag = true;
+          this.$store.commit("set_active_index", "/" + to.path.split("/")[1]);
+          if("0"==cwgFlag){
+           to.meta.keepAlive = true;
+           alert(1);
+          }else{
+           to.meta.keepAlive = false;
+          }
+          this.$store.state.refreshFlag=false;//此处的flag是为了标记菜单是否已经在顶部打开（打开就不用请求）如果是已经打开了 则标记是0 
+          break;
+        }
+      }
+      if (!flag) {
+        this.$store.commit("add_tabs", {
+          index: "/" + to.path.split("/")[1],
+          name: to.name,
+          menuCode:this.$store.state.menuCode,
+          //refreshFlag:'1',//此处的flag是为了标记菜单是否已经在顶部打开（刚打开需要请求）如果是刚打开 则标记是1 页面要刷新
+        });
+        to.meta.keepAlive = false;//新开tab时需要刷新----bycwg11.15
+        this.$store.state.refreshFlag=true;
+        this.$store.commit("set_active_index", "/" + to.path.split("/")[1]);
+      }
+    },
+
+  }
+  
+};
+</script>
+<style>
+ /* 自定义表头高度 */
+.el-table td, .el-table th {
+  padding: 5px 0
+}
+</style>
+
+<style scoped>
+.longLength{
+  width:95%;
+  left:5%
+}
+</style>
+
+

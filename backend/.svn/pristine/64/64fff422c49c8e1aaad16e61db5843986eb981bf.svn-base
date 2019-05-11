@@ -1,0 +1,744 @@
+<template>
+<div>
+  <div class="menuTreeLeft">
+    <div class="MenuTreeTitle">
+      <div class="left">菜单树</div>
+      <div class="right pad-rig-10"> 
+        <i class="el-icon-plus pad-rig-10" @click="addTree('addMenuList')"></i>
+        <i class="el-icon-edit pad-rig-10" @click="editTree"></i>
+        <i class="el-icon-delete pad-rig-10" @click="delTree"></i>
+        <i class="el-icon-refresh pad-rig-10" @click="getData"></i>
+      </div>
+    </div>
+    <el-tree
+     :data="menuData" 
+     :props="defaultProps" 
+     :default-expand-all='true' 
+     :highlight-current="true"   	
+      @node-click="handleNodeClick"
+      style="height: 520px;overflow:auto;border:1px solid #d1dbe5;">
+    </el-tree>
+  </div>
+  <div class="menuTreeRight">
+    <div class="menuTreeNews">
+      <span>菜单信息</span>
+    </div>
+     <div class="mar-top-10">
+          <el-form ref="menuDetail" :inline="true"  :model="menuDetail" label-width="80px">
+            <el-form-item label="名称">
+              <el-input v-model="menuDetail.menuName" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="类型">
+              <el-input v-model="menuDetail.type" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="方法">
+              <el-input v-model="menuDetail.menuUrl" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="排序">
+              <el-input v-model="menuDetail.sortNo" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="备注">
+              <el-input v-model="menuDetail.remark" readonly></el-input>
+            </el-form-item>
+          </el-form>
+      </div>
+    <div class="menuTreeNews">
+       <span>菜单按钮</span>
+       <div class="right pad-rig-10"> 
+          <i class="el-icon-plus pad-rig-10" @click="addButton('addButtonList')"></i>
+          <i class="el-icon-edit pad-rig-10" @click="editButton"></i>
+          <i class="el-icon-delete pad-rig-10" @click="delButton"></i>
+      </div>
+    </div>
+    <div class="mar-top-10">
+       <div style="margin:20px">
+         <!-- <el-radio-group v-model="buttonRadio">
+            <el-radio  v-for="(item, index) in buttonList"  :label="item.attributes.buttonCode" border>
+              <i :class="item.attributes.buttonStyle"></i>
+              {{item.attributes.buttonName}}
+            </el-radio>
+         </el-radio-group> -->
+        <el-table 
+          :data="buttonList" 
+          @select="chooseOne"
+          @select-all="chooseAll" 
+          border
+          stripe 
+          height="300" 
+          style="width: 100%" 
+        >
+        <!--  ref="multipleTable" -->
+          <el-table-column type="selection" width="55" ></el-table-column>
+          <el-table-column prop="buttonName" label="按钮名称" fixed="left" sortable >
+          </el-table-column>
+          <el-table-column prop="buttonUrl" label="方法名">
+          </el-table-column>
+        </el-table>   
+      </div>
+    </div>
+  </div>
+    <!-- 新增菜单 -->
+    <el-dialog title="新增菜单" :visible.sync="dialogMenuAdd" width="30%" :close-on-click-modal="false">
+      <el-form :model="addMenuList" :rules="rulesAddMenu" ref="addMenuList" label-width="100px">
+        <el-form-item label="名称"   prop="menuName"   >
+          <el-input  v-model="addMenuList.menuName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="类型" prop="type"  class="mar-top-20">
+          <el-select v-model="addMenuList.type" class="inputWidth" placeholder="请选择菜单类型">
+            <el-option label="菜单" value="1"></el-option>
+            <el-option label="目录" value="2"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="方法"   prop="menuUrl"   class="mar-top-20"  v-if="addMenuList.type==='1'">
+          <el-input  v-model="addMenuList.menuUrl" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="排序"   prop="sortNo"   class="mar-top-20">
+          <el-input  v-model="addMenuList.sortNo" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="备注"  prop="remark" class="mar-top-20">
+            <el-input v-model="addMenuList.remark"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="addMenuSure('addMenuList')">确 定</el-button>
+      </div> 
+    </el-dialog>
+    <!-- 修改菜单 -->
+    <el-dialog title="修改菜单" :visible.sync="dialogMenuEdit"  width="30%" :close-on-click-modal="false" :before-close="cancelDialog">
+        <el-form :model="editMenuList" :rules="rulesAddMenu" ref="editMenuList" label-width="100px">
+          <el-form-item label="名称"   prop="menuName"   >
+            <el-input  v-model="editMenuList.menuName" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="类型" prop="type"  class="mar-top-20">
+            <el-select v-model="editMenuList.type" class="inputWidth" placeholder="请选择菜单类型" disabled="disabled" >
+              <el-option label="菜单" value="1"></el-option>
+              <el-option label="目录" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="方法"   prop="menuUrl"   class="mar-top-20"  v-if="editMenuList.type==='1'||editMenuList.type==='菜单'">
+            <el-input  v-model="editMenuList.menuUrl" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="排序"   prop="sortNo"   class="mar-top-20">
+            <el-input  v-model="editMenuList.sortNo" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="备注"  prop="remark" class="mar-top-20">
+              <el-input v-model="editMenuList.remark"  clearable class="inputWidth"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="editMenuSure('editMenuList')">确 定</el-button>
+        </div> 
+    </el-dialog>
+    <!-- 新增按钮 -->
+    <el-dialog title="新增按钮" :visible.sync="dialogButtonAdd"  width="30%" :close-on-click-modal="false">
+      <el-form :model="addButtonList" :rules="rulesAddButton" ref="addButtonList" label-width="100px">
+        <el-form-item label="按钮名称"   prop="buttonName"  >
+          <el-input  v-model="addButtonList.buttonName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="执行方法"   prop="buttonUrl"  class="mar-top-20"  >
+            <el-input  v-model="addButtonList.buttonUrl" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="图标样式"   prop="buttonStyle"  class="mar-top-20"  >
+            <el-input  v-model="addButtonList.buttonStyle" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="排序"   prop="sortNo"   class="mar-top-20">
+          <el-input  v-model="addButtonList.sortNo" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="备注"  prop="remark" class="mar-top-20">
+            <el-input v-model="addButtonList.remark"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="addButtonSure('addButtonList')">确 定</el-button>
+      </div> 
+    </el-dialog>
+     <!--修改按钮 -->
+     <el-dialog title="修改按钮" :visible.sync="dialogButtonEdit" width="30%" :close-on-click-modal="false" :before-close="cancelDialog">
+      <el-form :model="editButtonList" :rules="rulesAddButton" ref="editButtonList" label-width="100px">
+        <el-form-item label="按钮名称"   prop="buttonName"   >
+          <el-input  v-model="editButtonList.buttonName" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+         <el-form-item label="执行方法"   prop="buttonUrl"  class="mar-top-20"  >
+            <el-input  v-model="editButtonList.buttonUrl" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="图标样式"   prop="buttonStyle"  class="mar-top-20"  >
+            <el-input  v-model="editButtonList.buttonStyle" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+        <el-form-item label="排序"   prop="sortNo"   class="mar-top-20">
+          <el-input  v-model="editButtonList.sortNo" clearable class="inputWidth" ></el-input>
+        </el-form-item>
+        <el-form-item label="备注"  prop="remark" class="mar-top-20">
+            <el-input v-model="editButtonList.remark"  clearable class="inputWidth"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="editButtonSure('editButtonList')">确 定</el-button>
+      </div> 
+    </el-dialog>
+</div>
+</template>
+<script>
+  export default {
+    data() {
+      //表单验证非空去空格后
+     var validatePass = (rule, value, callback) => {
+      if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+        callback(new Error('请输入名称'));
+      }else {
+        callback();
+      }
+    };
+      return {
+        loading:'',//加载遮罩
+        menuData:[],//菜单树
+        defaultProps: {////菜单树配置选项
+          children: 'children',//指定子树为节点对象的某个属性值
+          label: 'label'//指定节点标签为节点对象的某个属性值
+        },
+        menuDetail:{},//菜单详情
+        chooseMenuId:'',//选中的菜单id下新增修改删除按钮时 刷新用到
+        dialogMenuAdd:false,//新增菜单树默认hide
+        dialogMenuEdit:false,//修改菜单树默认hide
+        dialogButtonAdd:false,//新增按钮默认hide
+        dialogButtonEdit:false,//新增按钮默认hide
+        addMenuList:{//新增菜单的数据
+          menuName:'',//名称
+          type:'1',//类型 1是目录 2是菜单
+          menuUrl:'',//方法
+          sortNo:'',//排序
+          remark:'',//备注
+        },
+        editMenuList:{},//修改的菜单数据
+        buttonList:[],//按钮树
+        addButtonList:{//新增按钮的数据
+          buttonName:'',//名称
+          buttonUrl:'',//方法
+          buttonStyle:'',//图标样式
+          sortNo:'',//排序
+          remark:'',//备注
+        },
+        editButtonList:{//修改的按钮数据
+        },
+        rulesAddMenu:{//新增菜单
+          menuName: [
+             {required: true, validator: validatePass, trigger: 'blur' },
+             { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+          ],
+          type:[
+            { required: true, message: '请选择所属部门', trigger: 'change' }
+          ],
+          sortNo: [
+              { required: true, message: '排序不能为空'},//  
+               {pattern: /^([1-9]\d*|[0]{1,1})$/, message: '请输入正确的正整数' , trigger: 'blur'}
+          ],
+          menuUrl: [
+             {required: true,  message: '方法不能为空', trigger: 'blur' },
+             { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+          ],
+         },
+        rulesAddButton:{//新增按钮
+          buttonName: [
+              { required: true, validator: validatePass, trigger: 'blur' },
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+          sortNo: [
+                { required: true, message: '排序不能为空'},//  
+                {pattern: /^([1-9]\d*|[0]{1,1})$/, message: '请输入正确的正整数' , trigger: 'blur'}
+            ],
+          buttonUrl: [
+                { required: true, message: '方法不能为空'},//  
+                { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+        },
+        buttonChoose: [],//选中的按钮信息
+        getMenuUrl:this.$store.state.url+'webauth/menu/listMenus',//查询菜单,
+        getMenuDetail:this.$store.state.url+'webauth/menu/getMenuDetail',//查询菜单详情, 
+        delMenuUrl:this.$store.state.url+'webauth/menu/deleteMenu',//删除菜单, 
+        addNewMenuUrl:this.$store.state.url+'webauth/menu/insertMenu',//新增菜单, 
+        getModifyMenuUrl:this.$store.state.url+'webauth/menu/updateMenu',//修改菜单
+        getMenuBtnList:this.$store.state.url+'webauth/menuBtn/listMenuBtns',//查询按钮详情,
+        addMenuBtn:this.$store.state.url+'webauth/menuBtn/insertMenuBtn',//新增按钮,
+        updateMenuBtn:this.$store.state.url+'webauth/menuBtn/updateMenuBtn',//修改按钮,
+        deleteMenuBtn:this.$store.state.url+'webauth/menuBtn/deleteMenuBtn',//删除按钮,
+        
+      };
+    },
+    mounted: function () {
+      this.$nextTick(function () {
+        this.getData();
+      })
+    },
+    methods: {
+      //打开加载
+      openFullScreen(){
+        this.loading = this.$loading({
+          lock: true,
+          text: '操作中...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+      },
+      //选中一条菜单树
+      handleNodeClick(data) {
+        this.menuDetail=data.attributes;
+        if(1== this.menuDetail.type||"菜单"==this.menuDetail.type){//1代表菜单2代表目录
+          this.menuDetail.type="菜单"
+        }else{
+          this.menuDetail.type="目录"
+        }
+        this.chooseMenuId=data.id;//记住选中的菜单树id
+       // this.findMenuDetail();//查询菜单详情
+        this.findButtonList();//查询按钮信息
+      },
+      //查询菜单信息
+      // findMenuDetail(){
+      //   var params = new URLSearchParams();
+      //   params.append('MENU_CODE', this.chooseMenuId);
+      //   this.$axios.post(this.getMenuDetail,params).then(res =>  {//查询菜单详情
+      //       if(0==res.data.code){//查询成功
+      //         this.menuDetail=res.data.data;
+      //         if(1== this.menuDetail.type){//1代表菜单2代表目录
+      //           this.menuDetail.type="菜单"
+      //         }else{
+      //           this.menuDetail.type="目录"
+      //         }
+      //       }else{
+      //         this.$message({
+      //           showClose: true,
+      //           message: res.data.msg,
+      //           type: 'error'
+      //         });
+      //         }
+      //   });
+      // },
+      //查询按钮信息
+      findButtonList(){
+        var params = new URLSearchParams();
+        params.append('menuCode', this.chooseMenuId);
+        this.$axios.post(this.getMenuBtnList,params).then(res =>  {//查询按钮详情
+            if(0==res.data.code){//查询成功
+              this.buttonRadio="";
+              this.buttonList=res.data.data.all;
+              this.buttonChoose=[];//清空选中按钮
+            }else{
+              this.$message({
+                showClose: true,
+                message: res.data.msg,
+                type: 'error'
+              });
+            }
+        })
+      },
+      //打开新增菜单树dialog
+      addTree(addInfo){
+        if('菜单' == this.menuDetail.type || 1 == this.menuDetail.type){
+            this.$message({
+              showClose: true,
+              message: '只能在目录下新建菜单！',
+              type: 'error'
+            });
+            return;
+        }
+        this.dialogMenuAdd = true;
+        this.addMenuList={
+          menuName:'',//名称
+          type:'1',//类型 1是目录 2是菜单
+          menuUrl:'',//方法
+          sortNo:'',//排序
+          remark:'',//备注
+        };
+        if(this.$refs[addInfo]){//清空表单
+          this.$refs[addInfo].resetFields();
+        }
+      },
+      //确认新增菜单
+      addMenuSure(formName){
+         this.$refs[formName].validate((valid) => {
+          if (valid) {
+              var params = new URLSearchParams();
+              params.append('menuName', this.addMenuList.menuName);
+              params.append('menuUrl', this.addMenuList.menuUrl);
+              params.append('type', this.addMenuList.type);
+              params.append('sortNo', this.addMenuList.sortNo);
+              params.append('remark', this.addMenuList.remark);
+              params.append('parentMenuCode', this.menuDetail.menuCode==undefined ? "":this.menuDetail.menuCode);
+              params.append('parentAuthCode', this.menuDetail.authCode==undefined ? "":this.menuDetail.authCode);
+              params.append('level', this.menuDetail.level==undefined ? 0:this.menuDetail.level+1);
+              this.openFullScreen();//打开遮罩
+              this.$axios.post(this.addNewMenuUrl,params).then(res =>  {
+                this.loading.close(); //关闭加载
+                if(0==res.data.code){//新增成功
+                  this.getData();
+                  this.$message({
+                    showClose: true,
+                    message: '新增菜单成功',
+                    type: 'success'
+                  });
+                  this.menuDetail={};
+                  this.dialogMenuAdd = false;//隐藏dialo 
+                }else{
+                  this.$message({
+                    showClose: true,
+                    message: res.data.msg,
+                    type: 'error'
+                  });
+                }
+              }) 
+          } else {
+            return false;
+          }
+        });
+      },
+      //修改菜单树
+      editTree(){
+        if(this.menuDetail.menuName){
+          this.dialogMenuEdit = true;
+          this.editMenuList=JSON.parse(JSON.stringify(this.menuDetail));
+        }else{
+          this.$message({
+            showClose: true,
+            message: '请选择要修改的菜单',
+            type: 'error'
+          });
+        }
+      },
+      //确认修改菜单
+      editMenuSure(formName){
+        var type='';
+        if('菜单'==this.editMenuList.type||1==this.editMenuList.type){
+            type=1
+        }else if('目录'==this.editMenuList.type||2==this.editMenuList.type){
+            type=2
+        }
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            params.append('menuCode', this.menuDetail.menuCode);
+            params.append('menuName', this.editMenuList.menuName);
+            params.append('menuUrl', this.editMenuList.menuUrl);
+            params.append('type', type);//=='菜单'?1:2
+            params.append('sortNo', this.editMenuList.sortNo);
+            params.append('remark', this.editMenuList.remark);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.getModifyMenuUrl,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.dialogMenuEdit = false;
+               // this.menuDetail={};
+                this.$message({
+                  showClose: true,
+                  message: '修改成功',
+                  type: 'success'
+                });
+                this.dialogEdit = false;//隐藏dialo 
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            }) 
+          } else {
+            return false;
+          }
+        });
+      },
+      //删除菜单树
+      delTree(){
+       if(this.menuDetail.menuName){
+          this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          params.append('menuCode',this.menuDetail.menuCode);
+          params.append('authCode',this.menuDetail.authCode);
+          this.openFullScreen();//打开遮罩
+          this.$axios.post(this.delMenuUrl,params).then(res =>  {
+          this.loading.close(); //关闭加载  
+          if(0==res.data.code){//删除成功
+            this.getData();
+            this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+           }
+        })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行删除",
+            type: 'error'
+          });
+        }
+      },
+      //选中checkbox，取消选中 此处返回的是以选中的val
+      chooseOne(val) {
+        this.buttonChoose = val;
+      },
+      //全选
+      chooseAll(val){
+        this.buttonChoose = val;
+      },
+      //打开新增按钮dialog
+      addButton(addInfo){
+        if("菜单"==this.menuDetail.type){
+          if(this.menuDetail.menuName){
+            this.dialogButtonAdd = true;
+            if(this.$refs[addInfo]){//清空表单
+              this.$refs[addInfo].resetFields();
+            }
+          }else{
+              this.$message({
+                showClose: true,
+                message: '请选择一个菜单',
+                type: 'error'
+              });
+           }
+        }else{
+           this.$message({
+                showClose: true,
+                message: '目录下禁止新增按钮',
+                type: 'error'
+              });
+        }
+      },
+      //确认新增按钮
+      addButtonSure(formName){
+        this.$refs[formName].validate((valid) => {
+        if (valid) {
+            var params = new URLSearchParams();
+            params.append('menuCode', this.menuDetail.menuCode);
+            params.append('buttonName', this.addButtonList.buttonName);
+            params.append('buttonUrl', this.addButtonList.buttonUrl);
+            params.append('buttonStyle', this.addButtonList.buttonStyle==""?"":this.addButtonList.buttonStyle);
+            params.append('sortNo', this.addButtonList.sortNo);
+            params.append('remark', this.addButtonList.remark);
+            params.append('parentButtonCode', this.buttonChoose.id==undefined ? "0":this.buttonChoose.id);
+            params.append('level', this.buttonChoose.attributes==undefined ? "1":this.buttonChoose.attributes.level+1);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.addMenuBtn,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//新增成功
+                this.dialogButtonAdd = false;
+                this.findButtonList();//刷新按钮列表
+                this.$message({
+                  showClose: true,
+                  message: '新增按钮成功',
+                  type: 'success'
+                });
+                this.buttonChoose={};//按钮选中信息
+                this.dialogMenuAdd = false;//隐藏dialo  
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+        } else {
+          return false;
+        }
+      });
+      },
+      //打开修改按钮dialog
+      editButton(){
+        if(this.buttonChoose.length==1){
+          this.editButtonList=JSON.parse(JSON.stringify(this.buttonChoose[0]));//防止双向绑定
+          this.dialogButtonEdit = true;
+        }else{
+          this.$message({
+            showClose: true,
+            message: '请选择一条数据进行修改操作',
+            type: 'error'
+          });
+        }
+      },
+      //确认修改按钮
+      editButtonSure(formName){
+        this.$refs[formName].validate((valid) => {
+        if (valid) {
+            var params = new URLSearchParams();
+            params.append('buttonCode', this.buttonChoose[0].buttonCode);
+            params.append('menuCode', this.menuDetail.menuCode);
+            params.append('buttonName', this.editButtonList.buttonName);
+            params.append('buttonUrl', this.editButtonList.buttonUrl);
+            params.append('buttonStyle', this.editButtonList.buttonStyle==""?"":this.editButtonList.buttonStyle);
+            params.append('sortNo', this.editButtonList.sortNo);
+            params.append('remark', this.editButtonList.remark);
+            this.openFullScreen();//打开遮罩
+            this.$axios.post(this.updateMenuBtn,params).then(res =>  {
+              this.loading.close(); //关闭加载
+              if(0==res.data.code){//修改成功
+                this.dialogButtonEdit = false;
+                this.findButtonList();//刷新按钮列表
+                this.$message({
+                  showClose: true,
+                  message: '修改按钮成功',
+                  type: 'success'
+                });
+                this.buttonChoose=[];//按钮选中信息
+                this.dialogMenuEdit= false;//隐藏dialo  
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+        } else {
+          return false;
+        }
+      });
+      },
+      //删除按钮
+      delButton(){
+        if(this.buttonChoose.length==1){
+          this.$confirm('此操作将永久删除该按钮, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          params.append('buttonCode',this.buttonChoose[0].buttonCode);
+          this.openFullScreen();//打开遮罩
+          this.$axios.post(this.deleteMenuBtn,params).then(res =>  {
+          this.loading.close(); //关闭加载  
+          if(0==res.data.code){//删除成功
+            this.findButtonList();//刷新按钮列表
+            this.buttonChoose=[];
+            this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+           }
+        })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一个按钮进行删除操作",
+            type: 'error'
+          });
+        }
+      },
+       //取消新增,修改
+      cancelDialog(){
+        this.dialogMenuAdd = false;//隐藏dialo  
+        this.dialogMenuEdit = false;//隐藏dialo  
+        if(this.$refs['editMenuList']){//清空表单
+          this.$refs['editMenuList'].resetFields();
+        }
+        this.dialogButtonAdd = false;//隐藏dialo  
+        this.dialogButtonEdit = false;//隐藏dialo  
+        if(this.$refs['editButtonList']){//清空表单
+          this.$refs['editButtonList'].resetFields();
+        }
+      },
+      //获取菜单树
+      getData() {
+        this.openFullScreen();//打开遮罩
+        this.$axios.post(this.getMenuUrl).then(res =>  {
+          this.loading.close(); //关闭加载
+          if(0==res.data.code){//查询成功
+            this.menuData=res.data.data.rootTree;
+            this.menuDetail={};
+          }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+          }
+        })
+     }
+    }
+  };
+</script>
+<style scoped>
+.left{
+  float: left;
+}
+.right{
+  float: right;
+}
+.pad-rig-10{
+  padding-right: 10px
+}
+.mar-top-20{
+  margin-top: 20px
+}
+.menuTreeLeft{
+  width:30%;
+  float:left
+}
+.menuTreeRight{
+  width:70%;
+  float:right
+}
+.MenuTreeTitle{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-bottom: none;
+  }
+.menuTreeNews{
+  height: 40px;
+  line-height: 40px;
+  padding-left: 10px;
+  background: #fbfdff;
+  border: 1px solid #d1dbe5;
+  border-left: none;
+}
+.mar-top-10{
+  margin-top: 10px;
+}
+.el-form-item{
+  margin-bottom: 10px;
+}
+.buttonStyle{
+    /* color: #fff; */
+    /* background-color: #20a0ff; */
+    border: 1px solid #d1dbe5;
+    padding:8px 12px;
+    border-radius: 4px
+}
+.inputWidth{
+   max-width:200px
+}
+</style>
+

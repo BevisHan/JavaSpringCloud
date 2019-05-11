@@ -1,0 +1,539 @@
+<template>
+    <div>
+    <div>
+      <el-form :inline="true" :model="formInline" ref="formInline" class="demo-form-inline">
+        <el-form-item label="岗位名称"  prop="postName"> <!--prop 重置时用到  -->
+          <el-input v-model="formInline.postName" clearable></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchForm()">查询</el-button>
+        </el-form-item>
+         <el-form-item>
+          <el-button @click="resetForm('formInline')">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+     <div  class="handle-box">
+        <!-- <el-button type="primary" icon="el-icon-plus"    @click="addPost('addInfo')">新增</el-button>
+        <el-button type="primary" icon="el-icon-edit"    @click="editPost()">修改</el-button>
+        <el-button type="primary" icon="el-icon-delete"  @click="delPost()">删除岗位</el-button> -->
+        <el-button v-for="(x,i) in menuButtonList" type="primary" :icon=x.buttonStyle  :key="i" @click="chooseClick(x.buttonUrl)">{{x.buttonName}}</el-button>
+    </div>
+    <el-table 
+        :data="tableData" 
+        border
+        stripe 
+        @select="chooseOne"
+        @select-all="chooseAll" 
+        height="380" 
+        style="width: 100%" 
+        ref="multipleTable">
+        <el-table-column type="selection" width="55" ></el-table-column>
+        <el-table-column prop="postName" label="岗位名称" fixed="left" sortable >
+        </el-table-column>
+        <el-table-column prop="postNameJ" label="岗位名称简">
+        </el-table-column>
+         <el-table-column prop="deptName" label="部门名称">
+        </el-table-column>
+    </el-table>
+    <div class="pagination">
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="pageNum"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="dataSize">
+      </el-pagination>
+    </div>
+    <el-dialog title="新增岗位" :visible.sync="dialogAdd" :close-on-click-modal="false">
+      <el-dialog 
+        width="30%"
+        title="选择部门"
+        :visible.sync="innerVisibleAdd"
+        :close-on-click-modal="false" 
+        append-to-body>
+       <div style="max-height:300px;overflow:auto">
+         <el-tree :data="data" 
+         :props="defaultProps" 
+         :highlight-current="true" 
+         @node-click="handleNodeClick"></el-tree>
+       </div>
+       <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelTreeDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addChooseSure(1)">确 定</el-button>
+        </div>
+      </el-dialog>
+        <el-form :model="addInfo" label-width="100px" :rules="rules" ref="addInfo" :inline="true" :label-position="'right'">
+          <el-form-item label="岗位名称"   prop="postName" >
+            <el-input v-model="addInfo.postName" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="岗位名称简"  prop="postNameJ">
+             <el-input v-model="addInfo.postNameJ"  clearable class="inputWidth"></el-input>
+          </el-form-item>
+          <el-form-item label="部门"  prop="deptName">
+             <el-input v-model="addInfo.deptName"   @focus="openTreeChooseAdd" readonly   class="inputWidth"></el-input>
+          </el-form-item>      
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addSure('addInfo')">确 定</el-button>
+        </div>
+      </el-dialog>
+    <el-dialog title="修改用户" :visible.sync="dialogEdit" :close-on-click-modal="false">
+     <el-dialog width="30%" title="选择部门" :visible.sync="innerVisibleEdit" :close-on-click-modal="false" append-to-body>
+       <div style="max-height:300px;overflow:auto">
+         <el-tree 
+          :data="data"
+          :props="defaultProps"
+          :highlight-current="true" 
+          @node-click="handleNodeClick"></el-tree>
+       </div>
+       <div slot="footer" class="dialog-footer">
+          <el-button @click="cancelTreeDialog()">取 消</el-button>
+          <el-button type="primary"  @click="addChooseSure(2)">确 定</el-button>
+        </div>
+      </el-dialog>
+      <el-form :model="editInfo" label-width="100px" :rules="rules" ref="editInfo" :inline="true" :label-position="'right'">
+          <el-form-item label="岗位名称"   prop="postName" >
+            <el-input v-model="editInfo.postName" clearable class="inputWidth" ></el-input>
+          </el-form-item>
+          <el-form-item label="岗位名称简"  prop="postNameJ">
+             <el-input v-model="editInfo.postNameJ"  clearable class="inputWidth"></el-input>
+          </el-form-item>
+          <el-form-item label="部门"  prop="deptName">
+             <el-input v-model="editInfo.deptName"   @focus="openTreeChooseEdit" readonly   class="inputWidth"></el-input>
+          </el-form-item>
+        </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelDialog()">取 消</el-button>
+        <el-button type="primary"  @click="editSure('editInfo')">确 定</el-button>
+      </div>
+    </el-dialog>
+   </div>
+  </template>
+
+<script>
+export default {
+  data() {
+    //表单验证飞控去空格后非空
+    var validatePass = (rule, value, callback) => {
+      if ( value.replace(/(^\s*)|(\s*$)/g, "") === '') {//前后去空格
+        callback(new Error('请输入必填项'));
+      }else {
+        callback();
+      }
+    };
+    var validateDept = (rule, value, callback) => {
+      this.chooseDept.id;
+      if ( value === '' || undefined == value) {//前后去空格
+        callback(new Error('请输入必填项'));
+      }else {
+        callback();
+      }
+    };
+    return {
+      data: [],//部门菜单
+      defaultProps: {
+        children: 'children',
+        label: 'label'
+      },
+      dataSize: 0, //总条数
+      tableData: [],
+      pageNum: 1,
+      pageSize: 10,
+      formData:{},//查询条件传值
+      menuButtonList:[],//菜单按钮列表
+      dialogAdd: false,//新增框默认隐藏
+      dialogEdit: false,//新增框默认隐藏
+      innerVisibleAdd:false,//新增- 选择岗位弹出
+      innerVisibleEdit:false,//修改- 选择岗位弹出
+      getDataUrl: this.$store.state.url+'/webauth/post/listPosts',//获取表格数据
+      addUrl: this.$store.state.url+'/webauth/post/insertPost',//新增
+      editUrl: this.$store.state.url+'/webauth/post/updatePost',//修改
+      delUrl: this.$store.state.url+'/webauth/post/deletePost',//删除
+      getMenuUrl:this.$store.state.url+'/webauth/dept/listDepts',//查询部门树,
+      formInline: {//快捷查询
+          postName: '',
+      },
+      addInfo:{
+          postName:'',
+          postNameJ:'',
+          deptName:''
+      },
+      selectId: {},//选中的id
+      editInfo:{},//待修改的参数
+      editInfoBefore:{},//修改前的值 取消修改用
+      chooseDept:{},//选中的部门
+      // deptName:'',//选中的部门名称
+      rules: {//表单验证
+          postCode: [
+              { required: true, validator: validatePass,  trigger: 'blur' },// //,
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+          postName: [
+              { required: true, validator: validatePass, trigger: 'blur' },
+              { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+            ],
+          deptName: [
+            { required: true, message: '请选择部门',}
+          ],
+          postNameJ: [
+          { required: true, validator: validatePass, trigger: 'blur' },
+          { min: 1, max: 40, message: '长度在 1 到 40 个字符', trigger: 'blur' }
+              ],
+         
+        },
+   };  
+  },
+  watch: {
+    pageNum: function (){
+      this.getData();
+      },
+    pageSize: function (){
+      this.getData();
+    },
+  },
+  mounted: function () {
+      this.$nextTick(function () {
+        this.getData();
+        this.getButton();//获取页面按钮
+  })
+  },
+  methods: {
+     //获取页面按钮
+    getButton(){
+       this.menuCode=this.$store.state.menuCode;//防止按钮下面还有权限 切换菜单时值会改变
+       var params = new URLSearchParams();
+        params.append('USER_NAME', localStorage.getItem('ms_username'));
+        params.append('MENU_CODE', this.menuCode);
+        params.append('BUTTON_CODE', '');
+        this.$axios.post(this.$store.state.getButtonUrl, params).then(res =>  {
+        if(0==res.data.code){//设置成功
+          this.menuButtonList=res.data.data;
+        }else{
+          this.$message({
+            showClose: true,
+            message: res.data.msg,
+            type: 'error'
+          });
+        }
+        })
+    },
+    //判断点击哪个按钮
+    chooseClick(method){
+        if('addPost'==method){
+          this.addPost('addInfo');
+        }else if('editPost'==method){
+          this.editPost();
+        }else if('delPost'==method){
+          this.delPost();
+        }
+    },
+     //查询    
+    searchForm(){
+      var params = new URLSearchParams();
+      params.append("formData",JSON.stringify({ 
+        postName: this.formInline.postName,
+     }));
+      this.formData=params;
+      if(1!=this.pageNum){
+        this.pageNum=1;//每次查询从第一页开始
+      }else{
+        this.getData();
+      }
+    },
+    //重置查询域
+    resetForm(formInline){
+       this.$refs[formInline].resetFields();
+    },
+    //用户新增   
+    addPost(addInfo){
+      this.dialogAdd = true;
+      // this.deptName="";
+      if(this.$refs[addInfo]){//清空表单
+        this.$refs[addInfo].resetFields();
+       }
+    },
+     //新增-选择岗位树
+    openTreeChooseAdd(){
+      this.getDeptData(); 
+      this.innerVisibleAdd=true;
+      this.chooseDept={};//清空已选部门树
+    },
+    //修改-选择岗位树
+    openTreeChooseEdit(){
+       this.getDeptData(); 
+       this.innerVisibleEdit=true;
+       this.chooseDept={};//清空已选部门树
+    },
+    //选中一条菜单树
+    handleNodeClick(data) {
+      this.chooseDept=data;
+    },
+    //新增确认选择岗位树
+    addChooseSure(val){
+      if(this.chooseDept.id){
+        if(1==val){//1是新增 2是修改
+        // this.deptName=this.chooseDept.label;
+        this.addInfo.deptName=this.chooseDept.label;
+        this.innerVisibleAdd=false;
+        }else{
+        this.editInfo.deptName=this.chooseDept.label;
+        this.innerVisibleEdit=false;
+        }
+      }else{
+        this.$message({
+          showClose: true,
+          message: '请选择一个部门',
+          type: 'error'
+        });
+      }
+    },
+    //确认新增
+    addSure(formName){
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+              var params = new URLSearchParams();
+              params.append('postName', this.addInfo.postName);
+              params.append('postNameJ', this.addInfo.postNameJ);
+              params.append('deptCode', this.chooseDept.id);
+              this.$axios.post(this.addUrl,params).then(res =>  {
+                this.formData={};//清空查询域
+                if(0==res.data.code){//新增成功
+                  this.getData();
+                  this.$message({
+                    showClose: true,
+                    message: '新增岗位成功',
+                    type: 'success'
+                  });
+                }else{
+                  this.$message({
+                    showClose: true,
+                    message: res.data.msg,
+                    type: 'error'
+                  });
+                }
+              })
+            this.dialogAdd = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+       
+    },
+    //取消新增，修改
+    cancelDialog(){
+      this.dialogAdd = false;//隐藏新增dialo  
+      this.dialogEdit = false;//修改dialo  
+    },
+    //新增修改——岗位——tree
+    cancelTreeDialog(){
+      this.innerVisibleAdd = false;//修改dialo  
+      this.innerVisibleEdit = false;//修改dialo  
+    },
+    //修改信息
+    editPost(form){
+      if(this.editInfoBefore){
+        if(undefined!==this.editInfoBefore.uuid){
+          this.dialogEdit = true;
+          this.editInfo=JSON.parse(JSON.stringify(this.editInfoBefore));
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行修改",
+            type: 'error'
+          });
+        }
+      }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行修改",
+            type: 'error'
+          });
+        }
+    },
+    //确认修改
+    editSure(formName){
+       this.$refs[formName].validate((valid) => {
+          if (valid) {
+            var params = new URLSearchParams();
+            var deptCode = this.chooseDept.id;
+            if(undefined == deptCode){
+              deptCode = this.editInfo.deptCode;
+            }
+              params.append('postCode', this.editInfo.postCode);
+              params.append('postName', this.editInfo.postName);
+              params.append('postNameJ', this.editInfo.postNameJ);
+              params.append('deptCode', deptCode);
+              params.append('version', this.editInfo.version);
+            this.$axios.post(this.editUrl,params).then(res =>  {
+              if(0==res.data.code){//修改成功
+                this.getData();
+                this.$message({
+                    showClose: true,
+                    message: '修改岗位成功',
+                    type: 'success'
+                  });
+              }else{
+                this.$message({
+                  showClose: true,
+                  message: res.data.msg,
+                  type: 'error'
+                });
+              }
+            })
+            this.dialogEdit = false;//隐藏dialo  
+          } else {
+            return false;
+          }
+        });
+      
+    },
+    //删除岗位 
+    delPost(){
+      if(undefined!==this.selectId.length&&0<this.selectId.length){
+          this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          var params = new URLSearchParams();
+          params.append('postCodes', this.selectId);
+          this.$axios.post(this.delUrl,params).then(res =>  {
+          if(0==res.data.code){//删除成功
+            //还剩的条数>当前页数减一乘每页条数且 当前页数不是第一页
+            if(Number(this.dataSize)-Number(this.delNum)>Number(Number(this.pageNum)-1)*Number(this.pageSize)&&Number(this.pageNum)>1){//如果页数*每页条数 大于之前总条数减去删除的条数 即还剩的条数 则继续请求 否者 当前页数减一
+              this.getData();
+            }else{
+              this.pageNum--;
+            }
+            this.editInfo={};
+            this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          }else{
+            this.$message({
+              showClose: true,
+              message: res.data.msg,
+              type: 'error'
+            });
+           }
+        })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+        }else{
+          this.$message({
+            showClose: true,
+            message: "请选择一条数据进行删除",
+            type: 'error'
+          });
+        }
+    },
+    //每页条数
+    handleSizeChange(val) {
+      this.pageSize = val;
+    },
+    //第几页
+    handleCurrentChange(val) {
+      this.pageNum = val;
+    },
+    //选中checkbox，取消选中 此处返回的是以选中的val
+    chooseOne(val) {
+      var postCode=[];
+      for(var i=0;i<val.length;i++){
+        postCode.push(val[i].postCode)
+      }
+      this.delNum=postCode.length;
+      this.selectId = postCode.join(',');//将选中的id存起来
+      if(1==val.length){//选中一条时将选中的值存起来 否则清空待修改
+        this.editInfoBefore=JSON.parse(JSON.stringify(val[0]));
+      }else{
+        this.editInfoBefore={};
+      }
+    },
+    //全选
+    chooseAll(val){
+      var postCode=[];
+      for(var i=0;i<val.length;i++){
+        postCode.push(val[i].postCode)
+      }
+      this.delNum=postCode.length;
+      this.selectId = postCode.join(',');//将选中的id存起来
+      this.editInfoBefore={};
+    },
+    //获取表格数据
+    getData() {
+      this.$axios.post(this.getDataUrl+'?pageSize='+this.pageSize+'&pageNum='+this.pageNum,this.formData).then(res =>  {
+        this.selectId={};
+        this.editInfoBefore={};
+       if(0==res.data.code){//查询成功
+        this.tableData=res.data.data.list;
+        this.dataSize=res.data.data.total;
+       }else{
+         this.$message({
+          showClose: true,
+          message: res.data.msg,
+          type: 'error'
+        });
+       }
+      })
+    },
+    //获取部门树
+    getDeptData() {
+      this.$axios.post(this.getMenuUrl).then(res =>  {
+        if(0==res.data.code){//查询成功
+          this.data=res.data.data;
+        }else{
+        this.$message({
+          showClose: true,
+          message: res.data.msg,
+          type: 'error'
+        });
+        }
+      })
+    }
+    },
+};
+</script>
+
+<style scoped>
+.handle-box {
+  margin-bottom: 20px;
+}
+.inputWidth{
+   max-width:200px
+}
+.mar_top_12{
+  margin-top:12px
+}
+.roleStyle{
+ width:180px;
+ height:35px;
+ line-height:35px;
+ float:left;
+ text-align:center;
+ border:1px solid #d1dbe5;
+}
+.topNoStyle{
+  border-top:none
+}
+.rightNoStyle{
+  border-right:none
+}
+.tdStyle{
+  width:180px;
+  height:40px;
+  line-height:40px;
+  text-align:center;
+  border:1px solid #d1dbe5;
+  border-top:none;
+  border-right:none
+}
+</style>

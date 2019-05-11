@@ -1,0 +1,66 @@
+.successBackground{
+  background: #f2f2f2;
+  padding: 45px 0px;
+}
+.successShopping {
+  position: relative;
+  width: 1200px;
+  margin: 0px auto;
+  padding-bottom: 20px;
+  background: #fff;
+}
+.successShopping .main {
+  color: #77cb38;
+  font-size: 18px;
+  text-align: center;
+  padding: 115px 0px;
+  font-weight: bolder;
+}
+.successShopping .main .successImg {
+  width: 1200px;
+  height: 48px;
+  display: table-cell;
+	vertical-align: middle;
+}
+.successShopping .main .successImg img{
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+}
+.successShopping .footer{
+  position: relative;
+  display: flex;
+  width: 1200x;
+  font-size: 14px;
+}
+.successShopping .footer .orderId{
+  position: relative;
+  display: flex;
+  width: 250px;
+  padding: 5px 0 5px 60px;
+}
+.successShopping .footer .orderId p{
+  margin-top: 2px;
+}
+.successShopping .footer .pay{
+  position: relative;
+  display: flex;
+
+  padding: 5px 60px;
+}
+.successShopping .footer .pay p{
+  color: red;
+  font-size: 20px;
+  margin-top: -4px;
+  font-weight: bolder;
+}
+.successShopping .footer .action{
+  position: relative;
+  display: flex;
+  color: blue;
+  margin: 5px 0px 0px 358px;
+  font-weight: bolder;
+}
+.successShopping .footer .action p{
+  margin: 0px 25px;
+}

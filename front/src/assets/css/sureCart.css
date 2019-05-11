@@ -1,0 +1,274 @@
+.sureCart{
+  position: relative;
+  width: 1200px;
+  margin: 0 auto;
+
+}
+.sureCart .talbar{
+  display: flex;
+  position: relative;
+  font-weight: bolder;
+  margin: 10px 0;
+}
+.sureCart .selectAddress{
+  position: relative;
+  border: 1.5px solid #f2f2f2;
+}
+.sureCart .selectAddress .addressList{
+  position: relative;
+  display: flex;
+  border-bottom: 1.5px solid #f2f2f2;
+  margin: 10px 15px 0px;
+  padding: 10px 0px 15px;
+}
+.sureCart .selectAddress .addressList .selectBox{
+  padding: 0px 25px;
+}
+
+.sureCart .selectAddress .addressList .selectBox input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  -webkit-appearance: none;
+  background-color: transparent;
+  border: 0;
+  border-radius: 50%;
+  outline: 0 !important;
+  line-height: 15px;
+  color: #d8d8d8;
+}
+.sureCart .selectAddress .addressList .selectBox input[type="checkbox"]:after {
+  content: "\2713";
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  line-height: 15px;
+  text-align: center;
+  line-height: 14px;
+  font-size: 20px;
+  color: #fff;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+.sureCart .selectAddress .addressList .selectBox input[type="checkbox"]:checked:after {
+  background-color: red;
+  border-radius: 50%;
+  content: "\2713";
+  text-align: center;
+  font-size: 18px;
+  color: white;
+  padding-top: 4px;
+}
+
+
+.sureCart .selectAddress .addressList .userName{
+  width: 60px;
+}
+.sureCart .selectAddress .addressList .telephone{
+  /* padding-right: 25px; */
+  padding-top: 3px;
+  width: 125px;
+}
+.sureCart .selectAddress .addressList .address{
+  /* padding-right: 50px; */
+  width: 380px;
+}
+.sureCart .selectAddress .addressList .acquiescent{
+  /* padding-right: 25px; */
+  width: 335px;
+}
+.sureCart .selectAddress .addressList .acquiescent div{
+  background: #aea8a2;
+  color: #ffffff;
+  /* padding: 2px; */
+  text-align: center;
+  width: 70px;
+}
+.sureCart .selectAddress .addressList .setAcquiescent{
+  width: 100px;
+}
+.sureCart .selectAddress .addressList .setAcquiescent div{
+  width: 70px;
+  color: #0064c6;
+}
+.sureCart .selectAddress .addressList .changeAddress{
+  color: #0064c6;
+}
+.sureCart .selectAddress .extraAddress{
+  position: relative;
+  /* height: 50px; */
+  width: 240px;
+  text-align: center;
+  border: 1.5px solid #f2f2f2;
+  padding: 15px 0;
+  color: #aea8a2;
+  margin: 25px auto;
+}
+.sureCart .selectAddress .extraAddress div{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.sureCart .selectAddress .extraAddress img{
+  width: 18px;
+  margin-right: 10px;
+  /* float: left; */
+
+}
+.sureCart .cartMain{
+  position: relative;
+  overflow: hidden;
+}
+.sureCart .cartThead{
+  background: #eeeeee;
+  display: flex;
+  padding: 12px 0px;
+}
+.sureCart .cartThead .goods{
+  width: 500px;
+  text-align: center;
+}
+.sureCart .cartThead .number{
+  width: 233px;
+}
+.sureCart .cartThead .price{
+  width: 233px;
+}
+.sureCart .cartThead .sum{
+  width: 233px;
+}
+.sureCart .cartCut{
+  height: 2px;
+  background: #0063c6;
+  /* margin-bottom: 30px; */
+}
+.sureCart .cartList{
+  border-left: 1px solid #eeeeee;
+  border-right: 1px solid #eeeeee;
+}
+.sureCart .cartItem{
+  position: relative;
+  display: flex;
+  height: 106px;
+  padding-top: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eeeeee;
+}
+.sureCart .goodsSelf{
+  position: relative;
+  display: flex;
+  width: 458px;
+}
+.sureCart .goodsSelf .itemImg{
+  position: relative;
+  margin: 0px 30px 0px;
+}
+.sureCart .goodsSelf .itemImg img{
+  width: 100px;
+  height: 100px;
+}
+.sureCart .goodsSelf .itemDetaIled p{
+  overflow: hidden; /*自动隐藏文字*/
+  text-overflow: ellipsis;/*文字隐藏后添加省略号*/
+  white-space: nowrap;/*强制不换行*/
+  width: 176px;
+  padding: 40px 15px 0px;
+}
+.sureCart .cartItem .itemNumber{
+  padding: 35px 0px 0px;
+  text-align: center;
+}
+.sureCart .cartList .itemNumber .counter {
+  position: relative;
+  display: flex;
+  width: 120px;
+
+}
+.sureCart .cartList .itemNumber .counter .ad{
+  width: 33px;
+  height: 26px;
+  border: none;
+  outline: none;
+}
+.sureCart .cartList .itemNumber .counter .numInput{
+  width: 55px;
+  border: 1px solid #f2f2f2;
+  text-align: center;
+}
+.sureCart .cartItem .itemPrice{
+  padding: 40px 0px 0px 43px;
+}
+.sureCart .cartItem .itemSum{
+  padding: 40px 0px 0px;
+  color: #db0014;
+}
+.sureCart .itemNumber{
+  position: relative;
+  width: 233px;
+}
+.sureCart .itemPrice{
+  width: 225px;
+}
+.sureCart .itemSum{
+  width: 233px;
+}
+.sureCart .cartList .remark{
+  position: relative;
+  display: flex;
+  height: 60px;
+}
+.sureCart .cartList .remark p{
+  padding-left: 25px;
+  font-weight: 600;
+}
+.sureCart .cartList .remark textarea{
+  width: 500px;
+  OVERFLOW: hidden;
+  font-size: 16px;
+  border: none;
+  resize:none;
+  outline:none;
+}
+.sureCart .cartToolBar{
+  position: relative;
+  display: flex;
+  font-size: 14px;
+  height: 70px;
+  background: #eeeeee;
+  margin-bottom: 20px;
+}
+.sureCart .cartToolBar .accounts{
+  display: flex;
+  margin-left: 760px;
+}
+.sureCart .cartToolBar .accounts div{
+  display: flex;
+  margin-left: 40px;
+  padding-top:25px;
+}
+
+.sureCart .cartToolBar .allGoodsPrice p{
+  color: #db0014;
+  /* padding-top: 3px; */
+}
+.sureCart .cartToolBar .allGoodsPrice, .freight, .amount{
+  display: flex;
+}
+.sureCart .cartToolBar .freight p{
+  color: #db0014;
+}
+.sureCart .cartToolBar .amount p{
+  font-size: 22px;
+  color: #db0014;
+  font-weight: bolder;
+  margin-top: -6px;
+}
+.sureCart .cartToolBar .action{
+  position: absolute;
+  right: 0px;
+  font-size: 18px;
+  color: #ffffff;
+  background: #db0014;
+  padding: 20px 18px 26px;
+}

@@ -1,0 +1,578 @@
+<template>
+
+  <div>
+    <div class="tenantPage">
+      <el-form :inline="true" :model="tenantForm" :rules="rules" ref="tenantForm" class="demo-form-inline" label-width="100px" >
+        <el-form-item label='租户名称'  prop="tenantName">
+          <el-input v-model="tenantForm.tenantName" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="租户ID" prop="tenadtId">
+          <el-input v-model="tenantForm.tenadtId" clearable disabled></el-input>
+        </el-form-item>
+        <el-form-item label="主服务器" prop="masterServerCode">
+          <el-select v-model="tenantForm.masterServerCode" placeholder="请选择" clearable filterable>
+            <el-option
+              v-for="item in tenantForm.masterServers"
+              :key="item.serverCode"
+              :label="item.daName"
+              :value="item.serverCode">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="从服务器" prop="slaveServerCode">
+          <el-select v-model="tenantForm.slaveServerCode" placeholder="请选择" clearable filterable>
+            <el-option
+              v-for="item in tenantForm.slaveServers"
+              :key="item.serverCode"
+              :label="item.daName"
+              :value="item.serverCode">
+            </el-option>
+          </el-select>
+        </el-form-item> 
+        <!-- <el-form-item label="租户Logo" prop="logoUrl">
+            <el-upload
+                class="avatar-uploader"
+                style="width:715px;"
+                accept=".jpg,.jpeg,.png,.gif,.bmp,.JPG,.JPEG,.PBG,.GIF,.BMP"
+                :action="uploadPictureUrl"
+                :show-file-list="false"
+                :on-success="logoSuccess"
+                :on-error="logoFail"
+                :before-upload="beforeAvatarUpload">
+                <img v-if="1" :src="tenantForm.logoUrl" class="avatar">
+                <i class="el-icon-plus avatar-uploader-icon"></i>
+                <el-button size="small" type="primary" style="width:100px;">浏览...</el-button>
+            </el-upload>  
+        </el-form-item>            -->
+        <el-form-item label="租户Logo" prop="logoUrl">
+            <el-upload
+            class="upload-demo"
+            style="width:715px;"
+            :action="uploadPictureUrl"
+            :on-remove="logoRemove"
+            :on-success="logoSuccess"
+            :on-error="logoFail"
+            :file-list="tenantForm.logoUrl"
+            :limit="1"
+            list-type="picture-card">
+            <el-button size="small" type="primary" style="width:100px;">浏览...</el-button>
+          </el-upload>
+        </el-form-item> 
+        <el-form-item label="新闻图片" prop="newPicUrl" style="margin-bottom:20px;">
+            <el-upload
+            class="upload-demo"
+            style="width:715px;"
+            :action="uploadPictureUrl"
+            :on-remove="newRemove"
+            :on-success="newSuccess"
+            :on-error="newFail"
+            :file-list="tenantForm.newPicUrl"
+            list-type="picture-card"
+            multiple>
+            <el-button size="small" type="primary" style="width:100px;">浏览...</el-button>
+          </el-upload>
+        </el-form-item> 
+        <el-form-item label="实例配置" prop="instanceConfig" class="pzStyle">
+          <el-input v-model="tenantForm.instanceConfig" clearable></el-input>
+        </el-form-item>
+        <!-- <el-form-item label="实例配置" prop="trunkCooperateStatus" class="pzStyle">
+          <el-select v-model="tenantForm.trunkValue" placeholder="请选择" clearable filterable>
+            <el-option
+              v-for="item in tenantForm.trunkCooperateState"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-form-item> -->
+        <el-form-item label="是否生效" prop="activeFlag" style="width:715px;">
+            <el-switch
+            v-model="tenantForm.activeFlag"
+            active-value="1"
+            inactive-value="0"
+            disabled>
+            </el-switch>
+        </el-form-item>
+        <el-form-item label="功能配置" prop="funConfig" style="width:715px;" class="configStyle">
+            <el-checkbox-group v-model="tenantForm.funConfig">
+              <el-checkbox label="启用首页统计"></el-checkbox>
+              <el-checkbox label="启用在线缴费"></el-checkbox>
+              <el-checkbox label="启用银联在线代扣"></el-checkbox>
+            </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="最大项目数" prop="maxProjectNum">
+            <el-input v-model="tenantForm.maxProjectNum" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="最大用户数"  prop="maxUserNum">
+            <el-input v-model="tenantForm.maxUserNum" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="失效时间"  prop="inactiveDate">
+            <el-date-picker
+            v-model="tenantForm.inactiveDate"
+            type="datetime"
+            value-format="yyyy-MM-dd HH:mm:ss"
+            placeholder="选择日期时间">
+            </el-date-picker>
+        </el-form-item>
+      </el-form>
+      <div style="padding-bottom:20px;text-align:center;width:900px;">
+          <el-button type="primary" style="width:100px;" @click="saveTenant('tenantForm')">保存</el-button>
+          <el-button style="width:100px;" @click="closeaddTenant">取消</el-button>
+      </div>
+    </div>
+  </div>
+  </template>
+
+<script>
+export default {
+    data() {
+      return {
+          dialogImageUrl: '',
+          dialogVisible: false,  
+          loading:'',//加载遮罩
+          tenantForm: {//快捷查询
+            tenantName: '',
+            tenadtId: '',
+            activeFlag:'',//是否失效
+            instanceConfig:'',//功能配置
+            maxProjectNum:'',//最大项目数
+            maxUserNum:'',
+            masterServerCode:'',//主服务器
+            slaveServerCode:'',//从服务器
+            masterServers:[],
+            slaveServers:[],//从服务器
+            inactiveDate:'',
+            funConfig:[],
+            logoUrl:[],
+            newPicUrl:[]
+        },
+        logoList:[],
+        newList:[],
+        queryServersUrl: this.$store.state.url+'operation/tenant/queryServers',//获取表格数据
+        saveTenantUrl: this.$store.state.url+'operation/tenant/saveTenant',//获取表格数据
+        uploadPictureUrl:this.$store.state.url+'operation/tenant/uploadImg',//照片上传地址
+        rules: {//表单验证
+            // tenantName: [//租户名称
+            //     { required: true, message: '请输入租户名称', trigger: 'blur' }
+            // ],
+            // masterServerCode: [//主服务器
+            //     { required: true, message: '请选择主服务器', trigger: 'change' }
+            // ],
+            // slaveServerCode: [//从服务器
+            //     { required: true, message: '请选择从服务器', trigger: 'change' }
+            // ],
+            // instanceConfig: [//实例配置
+            //     { required: true, message: '请输入实例配置', trigger: 'blur' }
+            // ],
+            // logoUrl: [//logo图片
+            //     { required: true, message: '请上传logo图片', trigger: 'blur' }
+            // ],
+            // newPicUrl: [//新闻图片
+            //     { required: true, message: '请上传新闻图片', trigger: 'blur' },
+            // ],
+            // funConfig:[
+            //     {required: true, message: '请选择功能配置',trigger: 'change'}            
+            // ],
+            // maxProjectNum:[
+            //     {required: true, message: '请输入最大项目数',trigger: 'change'}            
+            // ],
+            // maxUserNum:[
+            //     {required: true, message: '请输入最大用户数',trigger: 'change'}            
+            // ],
+            // inactiveDate:[
+            //     {required: true, message: '请选择失效时间',trigger: 'blur'}            
+            // ]
+        },
+      }
+    },
+    beforeRouteLeave(to, from, next) {
+      // 设置下一个路由的 meta
+      to.meta.keepAlive = false; // 让 A 不缓存，即刷新
+      next();
+    },
+    // beforeRouteEnter(to, from, next){
+    //     next(vm=>{
+    //         vm.tenantForm = {
+    //             tenantName: '',
+    //             tenadtId: '',
+    //             activeFlag:0,//是否失效
+    //             instanceConfig:'',//功能配置
+    //             maxProjectNum:'',//最大项目数
+    //             maxUserNum:'',
+    //             masterServerCode:'',//主服务器
+    //             slaveServerCode:'',//从服务器
+    //             masterServers:[],
+    //             slaveServers:[],//从服务器
+    //             inactiveDate:'',
+    //             funConfig:[],
+    //             logoUrl:[],
+    //             newPicUrl:[]
+    //         };
+    //     })
+    // },
+    mounted: function () {
+        this.$nextTick(function () {   
+            // alert("111");
+            this.queryServers();
+            // this.tenantForm = {
+            //     tenantName: '',
+            //     tenadtId: '',
+            //     activeFlag:0,//是否失效
+            //     instanceConfig:'',//功能配置
+            //     maxProjectNum:'',//最大项目数
+            //     maxUserNum:'',
+            //     masterServerCode:'',//主服务器
+            //     slaveServerCode:'',//从服务器
+            //     masterServers:[],
+            //     slaveServers:[],//从服务器
+            //     inactiveDate:'',
+            //     funConfig:[],
+            //     logoUrl:[],
+            //     newPicUrl:[]
+            // };
+        })
+    },
+    activated:function(){
+        this.$nextTick(function () {   
+             this.queryServers();
+            //  this.tenantForm = {
+            //     tenantName: '',
+            //     tenadtId: '',
+            //     activeFlag:'',//是否失效
+            //     instanceConfig:'',//功能配置
+            //     maxProjectNum:'',//最大项目数
+            //     maxUserNum:'',
+            //     masterServerCode:'',//主服务器
+            //     slaveServerCode:'',//从服务器
+            //     masterServers:[],
+            //     slaveServers:[],//从服务器
+            //     inactiveDate:'',
+            //     funConfig:[],
+            //     logoUrl:[],
+            //     newPicUrl:[]
+            // };
+        })
+    },
+    deactivated:function(){
+        this.$nextTick(function () {   
+            //  this.tenantForm = {
+            //     tenantName: '',
+            //     tenadtId: '',
+            //     activeFlag:'',//是否失效
+            //     instanceConfig:'',//功能配置
+            //     maxProjectNum:'',//最大项目数
+            //     maxUserNum:'',
+            //     masterServerCode:'',//主服务器
+            //     slaveServerCode:'',//从服务器
+            //     masterServers:[],
+            //     slaveServers:[],//从服务器
+            //     inactiveDate:'',
+            //     funConfig:[],
+            //     logoUrl:[],
+            //     newPicUrl:[]
+            // };
+        })
+        // alert(111);
+    },
+    created :function(){
+        // alert("11");
+        // this.tenantForm = {
+        //     tenantName: '',
+        //     tenadtId: '',
+        //     activeFlag:0,//是否失效
+        //     instanceConfig:'',//功能配置
+        //     maxProjectNum:'',//最大项目数
+        //     maxUserNum:'',
+        //     masterServerCode:'',//主服务器
+        //     slaveServerCode:'',//从服务器
+        //     masterServers:[],
+        //     slaveServers:[],//从服务器
+        //     inactiveDate:'',
+        //     funConfig:[],
+        //     logoUrl:[],
+        //     newPicUrl:[]
+        // };
+    },
+    methods: {
+        logoSuccess(res, file,fileList){
+            // console.log(fileList);
+            this.$forceUpdate();
+            this.$message({
+                showClose: true,
+                message: '租户logo上传成功',
+                type: 'success'
+            });
+            this.logoList = fileList;
+        },
+        logoFail(){
+            this.$message.error('租户logo上传失败，请重新上传');
+        },
+        logoRemove(file,fileList){
+            this.logoList = fileList;
+        },
+        newSuccess(res, file,fileList){
+            this.$forceUpdate();
+            this.$message({
+                showClose: true,
+                message: '新闻图片上传成功',
+                type: 'success'
+            });
+            this.newList = fileList;
+        },
+        newFail(){
+            this.$message.error('新闻图片上传失败，请重新上传');
+        },
+        newRemove(file,fileList){
+             this.newList = fileList;
+        },
+        // beforeAvatarUpload(file) {//上传之前，返回false
+        //     const isJPG = file.type === 'image/jpeg';
+        //     const isLt2M = file.size / 1024 / 1024 < 5;
+        // if (!isLt2M) {
+        //     this.$message.error('上传头像图片大小不能超过 5MB!');
+        // }
+        //     return isLt2M;
+        // },
+        saveTenant(tenantForm){
+            var allLogo = [];
+            var allNew = [];
+            var allNewList = [];
+            // console.log(this.logoList);
+            for(var i=0;i<this.logoList.length;i++){
+                var data = {};
+                if(this.logoList[i].response == undefined){
+                    data.url = this.logoList[i].url;
+                }else{
+                    data.url = this.logoList[i].response.data[0];
+                }       
+                allLogo.push(data);
+                // console.log(this.logoList[i].response.data);
+                // if(this.logoList[i].response.data){
+                //     console.log(this.logoList[i].response.data[0]);
+                //     data.url = this.logoList[i].response.data[0];
+                //     allLogo.push(data);
+                // }
+                // data.url = this.logoList[i].response.data[0];
+                // allLogo.push(data);
+            }
+            // console.log(this.newList);
+            for(var i=0;i<this.newList.length;i++){
+                var data = {};
+                if(this.newList[i].response == undefined){
+                    data.url = this.newList[i].url;
+                    allNewList.push(this.newList[i].url);
+                }else{
+                    data.url = this.newList[i].response.data[0];
+                    allNewList.push(this.newList[i].response.data[0]);
+                }  
+                allNew.push(data);
+
+                // var data = {};
+                // if(this.newList[i].response.data){
+                //     data.url = this.newList[i].response.data[0];
+                //     allNewList.push(this.newList[i].response.data[0]);
+                //     allNew.push(data);
+                // }
+                
+            }
+            this.tenantForm.logoUrl = allLogo;
+            this.tenantForm.newPicUrl = allNew;
+            // return;
+            this.$refs[tenantForm].validate((valid) => {
+                if (valid) {
+                    this.openFullScreen();
+                    var params = new URLSearchParams();
+                    params.append('tenantName',this.tenantForm.tenantName);
+                    //params.append('tenadtId',this.tenantForm.tenadtId);
+                    params.append('masterServerCode',this.tenantForm.masterServerCode);
+                    params.append('slaveServerCode',this.tenantForm.slaveServerCode);
+                    if(allLogo.length){
+                        params.append('logoUrl',allLogo[0].url);
+                    }else{
+                        params.append('logoUrl','');
+                    }
+                    params.append('newPicUrl',allNewList);
+                    params.append('instanceConfig',this.tenantForm.instanceConfig);
+                    params.append('activeFlag',this.tenantForm.activeFlag);
+                    params.append('homeStatisticsFlag',0);
+                    params.append('onlinePaymentFlag',0);
+                    params.append('yinlianWithhodeFlag',0);
+                    params.append('maxProjectNum',this.tenantForm.maxProjectNum);
+                    params.append('maxUserNum',this.tenantForm.maxUserNum);
+                    params.append('inactiveDate',this.tenantForm.inactiveDate);
+                    for(var i=0;i<this.tenantForm.funConfig.length;i++){
+                        if(this.tenantForm.funConfig[i] == '启用首页统计'){
+                            params.set('homeStatisticsFlag',1);
+                        }
+                        if(this.tenantForm.funConfig[i] == '启用在线缴费'){
+                            params.set('onlinePaymentFlag',1);
+                        }
+                        if(this.tenantForm.funConfig[i] == '启用银联在线代扣'){
+                            params.set('yinlianWithhodeFlag',1);
+                        }
+                    }
+                    this.$axios.post(this.saveTenantUrl,params).then(res =>  {
+                        if(0==res.data.code){//查询成功
+                            this.$message({
+                                showClose: true,
+                                message: res.data.msg,
+                                type: 'success'
+                            });
+                            this.loading.close(); //关闭加载
+                            // this.$router.push('/operationState');
+                            var index = 0;
+                            for (let option of this.$store.state.options) {
+                                if (option.index === '/addTenant') {
+                                    break;
+                                }
+                                index++;
+                            }
+                            this.$store.state.options.splice(index, 1);
+                            this.$router.push('/operationState');            
+                        }else{
+                            this.$alert(res.data.msg, '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    this.loading.close(); //关闭加载
+                                    var index = 0;
+                                    for (let option of this.$store.state.options) {
+                                        if (option.index === '/addTenant') {
+                                            break;
+                                        }
+                                        index++;
+                                    }
+                                    this.$store.state.options.splice(index, 1);
+                                    this.$router.push('/operationState');
+                                }
+                            });
+                        }
+                    })
+                } else {
+                    return false;
+                }
+            });
+        },
+        closeaddTenant(){
+            var index = 0;
+            for (let option of this.$store.state.options) {
+                if (option.index === '/addTenant') {
+                    break;
+                }
+                index++;
+            }
+            this.$store.state.options.splice(index, 1);
+            this.$router.push('/operationState'); 
+        },
+        queryServers(){
+            // this.tenantForm.masterServers = [];
+            // this.tenantForm.slaveServers = [];
+            var masters = [];
+            var slaves = [];
+            this.$axios.post(this.queryServersUrl).then(res =>  {
+                if(0==res.data.code){//查询成功
+                    for(var i=0;i<res.data.data.length;i++){
+                        if(res.data.data[i].serverType == 1){
+                            masters.push(res.data.data[i]);
+                            // this.tenantForm.masterServers.push(res.data.data[i]);
+                        }else{
+                            slaves.push(res.data.data[i]);
+                            // this.tenantForm.slaveServers.push(res.data.data[i]);
+                        }
+                    }
+                    this.tenantForm.masterServers = masters;
+                    this.tenantForm.slaveServers = slaves;
+                }else{
+                    this.$message({
+                        showClose: true,
+                        message: res.data.msg,
+                        type: 'error'
+                    });
+                }
+            })
+        },
+        //打开加载
+        openFullScreen() {
+            this.loading = this.$loading({
+            lock: true,
+            text: '操作中...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.7)'
+            });
+        }
+      }
+    }
+</script>
+<style>
+.tenantPage .el-upload-list{
+    width: 600px;
+    border: 1px solid #c0c4cc;
+    min-height: 100px;
+    padding:5px 5px;
+}
+.tenantPage .upload-demo .el-upload{
+    position: absolute;
+    right: 90px;
+    top: 0;
+    background-color: #fff;
+    border: none;
+    line-height: 0px;
+    width: 10px;
+}
+.tenantPage .el-upload-list--picture-card{
+    display: block;
+}
+.tenantPage .el-date-editor.el-input{
+    width: 300px;
+}
+.tenantPage .el-form-item .el-input__inner{
+    width: 300px;
+}
+.tenantPage .pzStyle .el-input__inner{
+    width: 715px;
+}
+.tenantPage .configStyle .el-form-item__content{
+    border:1px solid #c0c4cc;
+    padding:5px 15px;
+}
+.tenantPage .configStyle .el-checkbox{
+    display: block;
+    margin: 0px;
+}
+.avatar-uploader .el-upload {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+    border-color: #409EFF;
+}
+.avatar-uploader .avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 178px;
+    height: 178px;
+    line-height: 178px;
+    text-align: center;
+}
+.avatar {
+    width: 100%;
+    height: 178px;
+    display: block;
+}
+.tenantPage .el-progress{
+    display:none;
+    width:100px;
+    height:100px;
+}
+.tenantPage .el-upload-list__item{
+    width:100px;
+    height:100px;
+    /* display:none; */
+    
+}
+</style>
+<style scoped>
+
+</style>
