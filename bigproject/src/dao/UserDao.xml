@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="dao.UserDao">
+	<insert id="reg" parameterType="String">
+		insert into user(user_name,user_pass)
+		values(#{username},#{password})
+	</insert>
+	<select id="findUser" parameterType="String" resultType="User">
+		select *
+		from user
+		where user_name = #{username} and user_pass =#{password} and user_rank = 1
+	</select>
+	<select id="findUser2" parameterType="String" resultType="User">
+		select *
+		from user
+		where user_name = #{username} and user_pass =#{password} and user_rank = 0
+	</select>
+	<select id="selectUserList" parameterType="User" resultType="User">
+		SELECT * from user limit #{start},#{rows}
+
+	</select>
+	<select id="selectUserListCount" parameterType="User"
+		resultType="Integer">
+		select count(*) from user
+
+	</select>
+</mapper>
