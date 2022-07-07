@@ -16,7 +16,7 @@
     "jQuery": "^1.7.4",
     "jsdom": "^13.1.0",
     "location": "0.0.1",
-    "moment": "^2.23.0",
+    "moment": "^2.29.4",
     "navigator": "^1.0.1",
     "url-search-params-polyfill": "^5.1.0",
     "vue": "^2.3.2",
